@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>運営スキャナ（事前登録チェック）</title>
 
 <!-- Supabase v2 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- ZXing (モバイル対応のQRデコード) -->
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0"></script>
 
 <body>
   <h1>運営スキャナ（事前登録チェック）</h1>
@@ -13,7 +15,7 @@
   <section>
     <button id="start-scan">📷 カメラでQRスキャン開始</button>
     <button id="stop-scan" disabled>⏹ 停止</button>
-    <div>
+    <div style="margin-top:.5rem;">
       <video id="video" autoplay playsinline muted style="width: 320px; height: 240px; background:#000;"></video>
     </div>
   </section>
@@ -33,13 +35,13 @@
   </section>
 
 <script>
-/** ▼▼ Supabase接続（あなたの値を使用） ▼▼ */
+/** ▼ Supabase接続（あなたのプロジェクトの値） ▼ */
 const SUPABASE_URL = "https://fsaeuowdijoeqhnrqazx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzYWV1b3dkaWpvZXFobnJxYXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MjA0MjYsImV4cCI6MjA3NTQ5NjQyNn0.xgIQ9jf3qa4oy6Dbc8mVaP8woRDWBwMxLAJwiCGEWmk";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false }});
-/** ▲▲ ここまで ▲▲ */
+/** ▲ ここまで ▲ */
 
-// 画面部品
+// 画面要素
 const els = {
   start: document.getElementById('start-scan'),
   stop: document.getElementById('stop-scan'),
@@ -48,11 +50,6 @@ const els = {
   uuidInput: document.getElementById('uuid-input'),
   lookupBtn: document.getElementById('lookup-btn')
 };
-
-let stream = null;
-let scanning = false;
-let detector = ('BarcodeDetector' in window) ? new BarcodeDetector({ formats: ['qr_code'] }) : null;
-let scanRAF = 0;
 
 function setResult(text) {
   els.result.textContent = text;
@@ -65,11 +62,11 @@ function badge(regType) {
   return `［${regType}］`;
 }
 
-// Supabase RPC呼び出し
+// Supabase RPC: uuid → ユーザー情報
 async function lookupByUuid(id) {
   setResult('照会中…');
   try {
-    // UUIDフォーマット軽いチェック
+    // UUIDフォーマット軽チェック
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRe.test(id)) throw new Error('UUID形式が不正です');
 
@@ -94,63 +91,75 @@ async function lookupByUuid(id) {
   }
 }
 
-// スキャン開始
-els.start.addEventListener('click', async () => {
-  setResult('初期化中…');
+/* ===== ZXing を使ったモバイル対応スキャナ ===== */
+let codeReader = null;
+let currentDeviceId = null;
+
+async function pickBackCamera(devices) {
+  // 背面らしいラベルを優先
+  const byLabel = devices.find(d =>
+    /back|rear|environment|後面|背面/i.test(d.label || '')
+  );
+  if (byLabel) return byLabel.deviceId;
+  // 次点: 多くの端末で背面が最後
+  return devices.length ? devices[devices.length - 1].deviceId : null;
+}
+
+async function startZXing() {
+  setResult('初期化中…（カメラ権限を許可してください）');
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false
-    });
-    els.video.srcObject = stream;
-    await els.video.play();
+    if (!codeReader) codeReader = new ZXing.BrowserMultiFormatReader();
+    const devices = await codeReader.listVideoInputDevices();
+    if (!devices || devices.length === 0) {
+      setResult('カメラが見つかりません（HTTPS/権限を確認）');
+      return;
+    }
+    currentDeviceId = await pickBackCamera(devices);
+
     els.start.disabled = true;
     els.stop.disabled = false;
-    scanning = true;
-    scanLoop();
+
+    await codeReader.decodeFromVideoDevice(
+      currentDeviceId,
+      els.video,
+      async (result, err) => {
+        if (result) {
+          const text = (result.getText() || '').trim();
+          await lookupByUuid(text);
+          stopZXing(); // 1回読んだら停止
+        } else if (err && !(err instanceof ZXing.NotFoundException)) {
+          els.result.textContent = '読み取りエラー: ' + (err.message || String(err));
+        }
+      }
+    );
+
+    // iOSのインライン再生対策
+    els.video.setAttribute('playsinline', 'true');
+    els.video.muted = true;
+
+    setResult('スキャン待機中… QRをかざしてください');
   } catch (e) {
-    setResult('カメラ起動に失敗: ' + (e.message || String(e)));
+    setResult('初期化失敗: ' + (e.message || String(e)));
   }
-});
+}
 
-// スキャン停止
-els.stop.addEventListener('click', () => stopScan());
+function stopZXing() {
+  try { if (codeReader) codeReader.reset(); } catch {}
+  els.start.disabled = false;
+  els.stop.disabled = true;
+  const stream = els.video.srcObject;
+  if (stream && stream.getTracks) stream.getTracks().forEach(t => t.stop());
+  els.video.srcObject = null;
+}
 
-// 手入力照会
+// イベント
+els.start.addEventListener('click', startZXing);
+els.stop.addEventListener('click', stopZXing);
 els.lookupBtn.addEventListener('click', () => {
   const id = (els.uuidInput.value || '').trim();
   if (!id) return;
   lookupByUuid(id);
 });
-
-// ループ
-async function scanLoop() {
-  if (!scanning) return;
-  if (detector && els.video.readyState >= 2) {
-    try {
-      const codes = await detector.detect(els.video);
-      if (codes && codes.length > 0) {
-        const text = (codes[0].rawValue || '').trim();
-        // QRの内容がそのままUUIDである前提（あなたの既存アプリのQR仕様）
-        await lookupByUuid(text);
-        stopScan(); // 一旦停止（連続読み取りを避ける）
-        return;
-      }
-    } catch { /* noop */ }
-  }
-  scanRAF = requestAnimationFrame(scanLoop);
-}
-
-function stopScan() {
-  scanning = false;
-  if (scanRAF) cancelAnimationFrame(scanRAF);
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-    stream = null;
-  }
-  els.start.disabled = false;
-  els.stop.disabled = true;
-}
 </script>
 </body>
 </html>
