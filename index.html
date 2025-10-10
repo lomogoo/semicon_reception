@@ -1,45 +1,319 @@
 <!DOCTYPE html>
 <html lang="ja">
+<head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>運営スキャナ（事前登録チェック）</title>
+<title>運営スキャナ</title>
 
 <!-- Supabase v2 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- ZXing: UMDビルド（←これが重要！） -->
+<!-- ZXing: UMDビルド -->
 <script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
 
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 1.5rem;
+    color: #1a1a1a;
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+    margin-bottom: 2rem;
+    letter-spacing: -0.02em;
+  }
+
+  /* Liquid Glass Card */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Camera Section */
+  .camera-section {
+    text-align: center;
+  }
+
+  #video {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    aspect-ratio: 4/3;
+    border-radius: 16px;
+    background: #000;
+    margin: 1rem auto;
+    display: block;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Buttons */
+  .button-group {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  button {
+    flex: 1;
+    min-width: 140px;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    backdrop-filter: blur(10px);
+  }
+
+  #start-scan {
+    background: rgba(52, 199, 89, 0.9);
+    color: white;
+    box-shadow: 0 4px 16px rgba(52, 199, 89, 0.4);
+  }
+
+  #start-scan:hover:not(:disabled) {
+    background: rgba(52, 199, 89, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 199, 89, 0.5);
+  }
+
+  #stop-scan {
+    background: rgba(255, 59, 48, 0.9);
+    color: white;
+    box-shadow: 0 4px 16px rgba(255, 59, 48, 0.4);
+  }
+
+  #stop-scan:hover:not(:disabled) {
+    background: rgba(255, 59, 48, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 59, 48, 0.5);
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Manual Input Section */
+  .input-group {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  #uuid-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.875rem 1rem;
+    font-size: 0.95rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-family: 'SF Mono', Monaco, monospace;
+    backdrop-filter: blur(10px);
+  }
+
+  #uuid-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  #uuid-input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  #lookup-btn {
+    background: rgba(0, 122, 255, 0.9);
+    color: white;
+    padding: 0.875rem 1.5rem;
+    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.4);
+  }
+
+  #lookup-btn:hover {
+    background: rgba(0, 122, 255, 1);
+    transform: translateY(-2px);
+  }
+
+  /* Result Display */
+  .result-section {
+    min-height: 200px;
+  }
+
+  .result-section h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+  }
+
+  #result {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 1.5rem;
+    font-size: 0.95rem;
+    color: white;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    min-height: 150px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Result Content Styling */
+  .result-content {
+    display: none;
+  }
+
+  .result-content.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-pre {
+    background: rgba(52, 199, 89, 0.3);
+    color: #34c759;
+    border: 2px solid rgba(52, 199, 89, 0.5);
+  }
+
+  .badge-onsite {
+    background: rgba(0, 122, 255, 0.3);
+    color: #007aff;
+    border: 2px solid rgba(0, 122, 255, 0.5);
+  }
+
+  .user-name {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  .user-info {
+    font-size: 1.25rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .user-meta {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    font-family: 'SF Mono', Monaco, monospace;
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 1.5rem 0;
+  }
+
+  @media (max-width: 480px) {
+    body {
+      padding: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+    }
+
+    .button-group {
+      flex-direction: column;
+    }
+
+    button {
+      width: 100%;
+    }
+
+    .user-name {
+      font-size: 1.5rem;
+    }
+
+    .user-info {
+      font-size: 1.1rem;
+    }
+  }
+</style>
+</head>
+
 <body>
-  <h1>運営スキャナ（事前登録チェック）</h1>
+  <div class="container">
+    <h1>半導体キャリアフェス</h1>
 
-  <section>
-    <button id="start-scan">📷 カメラでQRスキャン開始</button>
-    <button id="stop-scan" disabled>⏹ 停止</button>
-    <div style="margin-top:.5rem;">
-      <video id="video" autoplay playsinline muted style="width: 320px; height: 240px; background:#000;"></video>
+    <div class="glass-card camera-section">
+      <div class="button-group">
+        <button id="start-scan">📷 カメラ起動</button>
+        <button id="stop-scan" disabled>⏹ 停止</button>
+      </div>
+      <video id="video" autoplay playsinline muted></video>
     </div>
-  </section>
 
-  <section style="margin-top:1rem;">
-    <div>
-      手入力テスト: <input id="uuid-input" placeholder="ユーザーUUIDを貼り付け" size="50" />
-      <button id="lookup-btn">照会</button>
+    <div class="glass-card">
+      <div class="input-group">
+        <input id="uuid-input" placeholder="UUID手入力（テスト用）" />
+        <button id="lookup-btn">検索</button>
+      </div>
     </div>
-  </section>
 
-  <hr />
-
-  <section>
-    <h2>結果</h2>
-    <pre id="result" style="white-space:pre-wrap;"></pre>
-  </section>
+    <div class="glass-card result-section">
+      <h2>スキャン結果</h2>
+      <div id="result">QRコードをスキャンしてください</div>
+    </div>
+  </div>
 
 <script>
-/** ▼ Supabase接続（あなたのプロジェクトの値） ▼ */
+/** Supabase接続 */
 const SUPABASE_URL = "https://fsaeuowdijoeqhnrqazx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzYWV1b3dkaWpvZXFobnJxYXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MjA0MjYsImV4cCI6MjA3NTQ5NjQyNn0.xgIQ9jf3qa4oy6Dbc8mVaP8woRDWBwMxLAJwiCGEWmk";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false }});
-/** ▲ ここまで ▲ */
 
 // 画面要素
 const els = {
@@ -51,22 +325,30 @@ const els = {
   lookupBtn: document.getElementById('lookup-btn')
 };
 
-function setResult(text) {
-  els.result.textContent = text;
+function setResult(html) {
+  els.result.innerHTML = html;
 }
 
-function badge(regType) {
-  if (!regType) return "";
-  if (regType === 'pre_registration') return '［✅ 事前登録済み］';
-  if (regType === 'on_site') return '［🟦 当日受付］';
-  return `［${regType}］`;
+function formatResult(data) {
+  const badgeClass = data.registration_type === 'pre_registration' ? 'badge-pre' : 'badge-onsite';
+  const badgeText = data.registration_type === 'pre_registration' ? '✅ 事前登録済み' : '🟦 当日受付';
+  
+  return `
+    <div class="badge ${badgeClass}">${badgeText}</div>
+    <div class="user-name">${data.name || '-'}</div>
+    <div class="user-info">🏫 ${data.school || '-'}</div>
+    <div class="user-info">📚 ${data.department || '-'}</div>
+    <div class="user-meta">
+      UUID: ${data.id}<br>
+      登録区分: ${data.registration_type || '-'}
+    </div>
+  `;
 }
 
 // Supabase RPC: uuid → ユーザー情報
 async function lookupByUuid(id) {
-  setResult('照会中…');
+  setResult('🔍 照会中…');
   try {
-    // UUIDフォーマット軽チェック
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRe.test(id)) throw new Error('UUID形式が不正です');
 
@@ -74,48 +356,39 @@ async function lookupByUuid(id) {
     if (error) throw error;
 
     if (!data) {
-      setResult('該当なし（UUIDが見つかりません）');
+      setResult('❌ 該当なし<br><span style="font-size:0.9rem;opacity:0.8;">このUUIDは登録されていません</span>');
       return;
     }
 
-    const lines = [
-      `${badge(data.registration_type)}  UUID: ${data.id}`,
-      `氏名: ${data.name || '-'}`,
-      `学校: ${data.school || '-'}`,
-      `学部/学科: ${data.department || '-'}`,
-      `登録区分: ${data.registration_type || '-'}`
-    ];
-    setResult(lines.join('\n'));
+    setResult(formatResult(data));
   } catch (e) {
-    setResult('エラー: ' + (e.message || String(e)));
+    setResult('⚠️ エラー<br><span style="font-size:0.9rem;opacity:0.8;">' + (e.message || String(e)) + '</span>');
   }
 }
 
-/* ===== ZXing を使ったモバイル対応スキャナ ===== */
+/* ZXing スキャナ */
 let codeReader = null;
 let currentDeviceId = null;
 
 async function pickBackCamera(devices) {
-  // 背面らしいラベルを優先
   const byLabel = devices.find(d =>
     /back|rear|environment|後面|背面/i.test(d.label || '')
   );
   if (byLabel) return byLabel.deviceId;
-  // 次点: 多くの端末で背面が最後
   return devices.length ? devices[devices.length - 1].deviceId : null;
 }
 
 async function startZXing() {
-  setResult('初期化中…（カメラ権限を許可してください）');
+  setResult('📷 初期化中…<br><span style="font-size:0.9rem;opacity:0.8;">カメラ権限を許可してください</span>');
   try {
     if (!window.ZXing || !window.ZXing.BrowserMultiFormatReader) {
-      throw new Error('ZXing の読み込みに失敗しました（UMDビルドのスクリプトURLを確認）');
+      throw new Error('ZXing の読み込みに失敗しました');
     }
 
     if (!codeReader) codeReader = new ZXing.BrowserMultiFormatReader();
     const devices = await codeReader.listVideoInputDevices();
     if (!devices || devices.length === 0) {
-      setResult('カメラが見つかりません（HTTPS/権限を確認）');
+      setResult('❌ カメラが見つかりません<br><span style="font-size:0.9rem;opacity:0.8;">HTTPS環境と権限を確認してください</span>');
       return;
     }
     currentDeviceId = await pickBackCamera(devices);
@@ -130,20 +403,19 @@ async function startZXing() {
         if (result) {
           const text = (result.getText() || '').trim();
           await lookupByUuid(text);
-          stopZXing(); // 1回読んだら停止
+          stopZXing();
         } else if (err && !(err instanceof ZXing.NotFoundException)) {
-          els.result.textContent = '読み取りエラー: ' + (err.message || String(err));
+          setResult('⚠️ 読み取りエラー<br><span style="font-size:0.9rem;opacity:0.8;">' + (err.message || String(err)) + '</span>');
         }
       }
     );
 
-    // iOSのインライン再生対策
     els.video.setAttribute('playsinline', 'true');
     els.video.muted = true;
 
-    setResult('スキャン待機中… QRをかざしてください');
+    setResult('👀 スキャン待機中…<br><span style="font-size:0.9rem;opacity:0.8;">QRコードをカメラにかざしてください</span>');
   } catch (e) {
-    setResult('初期化失敗: ' + (e.message || String(e)));
+    setResult('⚠️ 初期化失敗<br><span style="font-size:0.9rem;opacity:0.8;">' + (e.message || String(e)) + '</span>');
   }
 }
 
