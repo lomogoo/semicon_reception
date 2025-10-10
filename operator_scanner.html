@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>運営スキャナ（事前登録チェック）</title>
+
+<!-- Supabase v2 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<body>
+  <h1>運営スキャナ（事前登録チェック）</h1>
+
+  <section>
+    <button id="start-scan">📷 カメラでQRスキャン開始</button>
+    <button id="stop-scan" disabled>⏹ 停止</button>
+    <div>
+      <video id="video" autoplay playsinline muted style="width: 320px; height: 240px; background:#000;"></video>
+    </div>
+  </section>
+
+  <section style="margin-top:1rem;">
+    <div>
+      手入力テスト: <input id="uuid-input" placeholder="ユーザーUUIDを貼り付け" size="50" />
+      <button id="lookup-btn">照会</button>
+    </div>
+  </section>
+
+  <hr />
+
+  <section>
+    <h2>結果</h2>
+    <pre id="result" style="white-space:pre-wrap;"></pre>
+  </section>
+
+<script>
+/** ▼▼ Supabase接続（あなたの値を使用） ▼▼ */
+const SUPABASE_URL = "https://fsaeuowdijoeqhnrqazx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzYWV1b3dkaWpvZXFobnJxYXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MjA0MjYsImV4cCI6MjA3NTQ5NjQyNn0.xgIQ9jf3qa4oy6Dbc8mVaP8woRDWBwMxLAJwiCGEWmk";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false }});
+/** ▲▲ ここまで ▲▲ */
+
+// 画面部品
+const els = {
+  start: document.getElementById('start-scan'),
+  stop: document.getElementById('stop-scan'),
+  video: document.getElementById('video'),
+  result: document.getElementById('result'),
+  uuidInput: document.getElementById('uuid-input'),
+  lookupBtn: document.getElementById('lookup-btn')
+};
+
+let stream = null;
+let scanning = false;
+let detector = ('BarcodeDetector' in window) ? new BarcodeDetector({ formats: ['qr_code'] }) : null;
+let scanRAF = 0;
+
+function setResult(text) {
+  els.result.textContent = text;
+}
+
+function badge(regType) {
+  if (!regType) return "";
+  if (regType === 'pre_registration') return '［✅ 事前登録済み］';
+  if (regType === 'on_site') return '［🟦 当日受付］';
+  return `［${regType}］`;
+}
+
+// Supabase RPC呼び出し
+async function lookupByUuid(id) {
+  setResult('照会中…');
+  try {
+    // UUIDフォーマット軽いチェック
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRe.test(id)) throw new Error('UUID形式が不正です');
+
+    const { data, error } = await sb.rpc('lookup_user', { p_id: id }).single();
+    if (error) throw error;
+
+    if (!data) {
+      setResult('該当なし（UUIDが見つかりません）');
+      return;
+    }
+
+    const lines = [
+      `${badge(data.registration_type)}  UUID: ${data.id}`,
+      `氏名: ${data.name || '-'}`,
+      `学校: ${data.school || '-'}`,
+      `学部/学科: ${data.department || '-'}`,
+      `登録区分: ${data.registration_type || '-'}`
+    ];
+    setResult(lines.join('\n'));
+  } catch (e) {
+    setResult('エラー: ' + (e.message || String(e)));
+  }
+}
+
+// スキャン開始
+els.start.addEventListener('click', async () => {
+  setResult('初期化中…');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    els.video.srcObject = stream;
+    await els.video.play();
+    els.start.disabled = true;
+    els.stop.disabled = false;
+    scanning = true;
+    scanLoop();
+  } catch (e) {
+    setResult('カメラ起動に失敗: ' + (e.message || String(e)));
+  }
+});
+
+// スキャン停止
+els.stop.addEventListener('click', () => stopScan());
+
+// 手入力照会
+els.lookupBtn.addEventListener('click', () => {
+  const id = (els.uuidInput.value || '').trim();
+  if (!id) return;
+  lookupByUuid(id);
+});
+
+// ループ
+async function scanLoop() {
+  if (!scanning) return;
+  if (detector && els.video.readyState >= 2) {
+    try {
+      const codes = await detector.detect(els.video);
+      if (codes && codes.length > 0) {
+        const text = (codes[0].rawValue || '').trim();
+        // QRの内容がそのままUUIDである前提（あなたの既存アプリのQR仕様）
+        await lookupByUuid(text);
+        stopScan(); // 一旦停止（連続読み取りを避ける）
+        return;
+      }
+    } catch { /* noop */ }
+  }
+  scanRAF = requestAnimationFrame(scanLoop);
+}
+
+function stopScan() {
+  scanning = false;
+  if (scanRAF) cancelAnimationFrame(scanRAF);
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  els.start.disabled = false;
+  els.stop.disabled = true;
+}
+</script>
+</body>
+</html>
