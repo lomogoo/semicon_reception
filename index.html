@@ -68,6 +68,193 @@
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
   }
 
+  /* Fullscreen Camera Overlay */
+  .camera-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    z-index: 1000;
+    flex-direction: column;
+  }
+
+  .camera-overlay.active {
+    display: flex;
+  }
+
+  .camera-overlay #video {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    border-radius: 0;
+    margin: 0;
+    object-fit: cover;
+  }
+
+  .camera-close-btn {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 1001;
+  }
+
+  .camera-close-btn:hover {
+    background: rgba(255, 255, 255, 0.5);
+    transform: scale(1.1);
+  }
+
+  .camera-status {
+    position: absolute;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(20px);
+    padding: 1rem 2rem;
+    border-radius: 16px;
+    color: white;
+    font-size: 1rem;
+    text-align: center;
+    z-index: 1001;
+  }
+
+  /* Result Modal Popup */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .modal-overlay.active {
+    display: flex;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .modal-content {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(40px) saturate(180%);
+    border-radius: 28px;
+    padding: 2.5rem;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    position: relative;
+    animation: slideUp 0.4s ease;
+    color: #1a1a1a;
+  }
+
+  @keyframes slideUp {
+    from { 
+      opacity: 0; 
+      transform: translateY(30px) scale(0.95);
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .modal-close-btn {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    color: #666;
+    font-size: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .modal-close-btn:hover {
+    background: rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
+  }
+
+  .modal-badge {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .modal-badge-pre {
+    background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(52, 199, 89, 0.4);
+  }
+
+  .modal-badge-onsite {
+    background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.4);
+  }
+
+  .modal-user-name {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+  }
+
+  .modal-user-info {
+    font-size: 1.35rem;
+    color: #333;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .modal-user-meta {
+    font-size: 0.8rem;
+    color: #999;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid rgba(0, 0, 0, 0.1);
+    font-family: 'SF Mono', Monaco, monospace;
+    line-height: 1.8;
+  }
+
   /* Buttons */
   .button-group {
     display: flex;
@@ -293,7 +480,6 @@
         <button id="start-scan">📷 カメラ起動</button>
         <button id="stop-scan" disabled>⏹ 停止</button>
       </div>
-      <video id="video" autoplay playsinline muted></video>
     </div>
 
     <div class="glass-card">
@@ -304,8 +490,23 @@
     </div>
 
     <div class="glass-card result-section">
-      <h2>スキャン結果</h2>
+      <h2>最近のスキャン</h2>
       <div id="result">QRコードをスキャンしてください</div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Camera Overlay -->
+  <div class="camera-overlay" id="camera-overlay">
+    <button class="camera-close-btn" id="camera-close">✕</button>
+    <video id="video" autoplay playsinline muted></video>
+    <div class="camera-status" id="camera-status">QRコードをカメラにかざしてください</div>
+  </div>
+
+  <!-- Result Modal Popup -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close-btn" id="modal-close">✕</button>
+      <div id="modal-result"></div>
     </div>
   </div>
 
@@ -322,31 +523,63 @@ const els = {
   video: document.getElementById('video'),
   result: document.getElementById('result'),
   uuidInput: document.getElementById('uuid-input'),
-  lookupBtn: document.getElementById('lookup-btn')
+  lookupBtn: document.getElementById('lookup-btn'),
+  cameraOverlay: document.getElementById('camera-overlay'),
+  cameraClose: document.getElementById('camera-close'),
+  cameraStatus: document.getElementById('camera-status'),
+  modalOverlay: document.getElementById('modal-overlay'),
+  modalResult: document.getElementById('modal-result'),
+  modalClose: document.getElementById('modal-close')
 };
 
 function setResult(html) {
   els.result.innerHTML = html;
 }
 
-function formatResult(data) {
-  const badgeClass = data.registration_type === 'pre_registration' ? 'badge-pre' : 'badge-onsite';
+function setCameraStatus(text) {
+  els.cameraStatus.textContent = text;
+}
+
+function showModal(html) {
+  els.modalResult.innerHTML = html;
+  els.modalOverlay.classList.add('active');
+}
+
+function hideModal() {
+  els.modalOverlay.classList.remove('active');
+}
+
+function formatModalResult(data) {
+  const badgeClass = data.registration_type === 'pre_registration' ? 'modal-badge-pre' : 'modal-badge-onsite';
   const badgeText = data.registration_type === 'pre_registration' ? '✅ 事前登録済み' : '🟦 当日受付';
   
   return `
-    <div class="badge ${badgeClass}">${badgeText}</div>
-    <div class="user-name">${data.name || '-'}</div>
-    <div class="user-info">🏫 ${data.school || '-'}</div>
-    <div class="user-info">📚 ${data.department || '-'}</div>
-    <div class="user-meta">
+    <div class="modal-badge ${badgeClass}">${badgeText}</div>
+    <div class="modal-user-name">${data.name || '-'}</div>
+    <div class="modal-user-info">🏫 ${data.school || '-'}</div>
+    <div class="modal-user-info">📚 ${data.department || '-'}</div>
+    <div class="modal-user-meta">
       UUID: ${data.id}<br>
       登録区分: ${data.registration_type || '-'}
     </div>
   `;
 }
 
+function formatResult(data) {
+  const badgeClass = data.registration_type === 'pre_registration' ? 'badge-pre' : 'badge-onsite';
+  const badgeText = data.registration_type === 'pre_registration' ? '✅ 事前登録' : '🟦 当日受付';
+  
+  return `
+    <div class="badge ${badgeClass}">${badgeText}</div>
+    <div class="user-name">${data.name || '-'}</div>
+    <div class="user-info">🏫 ${data.school || '-'}</div>
+    <div class="user-info">📚 ${data.department || '-'}</div>
+  `;
+}
+
 // Supabase RPC: uuid → ユーザー情報
-async function lookupByUuid(id) {
+async function lookupByUuid(id, showInModal = false) {
+  setCameraStatus('🔍 照会中…');
   setResult('🔍 照会中…');
   try {
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -356,13 +589,30 @@ async function lookupByUuid(id) {
     if (error) throw error;
 
     if (!data) {
-      setResult('❌ 該当なし<br><span style="font-size:0.9rem;opacity:0.8;">このUUIDは登録されていません</span>');
+      const errorMsg = '❌ 該当なし<br><span style="font-size:0.9rem;opacity:0.8;">このUUIDは登録されていません</span>';
+      if (showInModal) {
+        showModal(errorMsg);
+      } else {
+        setResult(errorMsg);
+      }
       return;
     }
 
+    // モーダル表示
+    if (showInModal) {
+      showModal(formatModalResult(data));
+    }
+    
+    // 履歴として下部にも表示
     setResult(formatResult(data));
+    
   } catch (e) {
-    setResult('⚠️ エラー<br><span style="font-size:0.9rem;opacity:0.8;">' + (e.message || String(e)) + '</span>');
+    const errorMsg = '⚠️ エラー<br><span style="font-size:0.9rem;opacity:0.8;">' + (e.message || String(e)) + '</span>';
+    if (showInModal) {
+      showModal(errorMsg);
+    } else {
+      setResult(errorMsg);
+    }
   }
 }
 
@@ -379,7 +629,8 @@ async function pickBackCamera(devices) {
 }
 
 async function startZXing() {
-  setResult('📷 初期化中…<br><span style="font-size:0.9rem;opacity:0.8;">カメラ権限を許可してください</span>');
+  els.cameraOverlay.classList.add('active');
+  setCameraStatus('📷 初期化中…');
   try {
     if (!window.ZXing || !window.ZXing.BrowserMultiFormatReader) {
       throw new Error('ZXing の読み込みに失敗しました');
@@ -388,7 +639,7 @@ async function startZXing() {
     if (!codeReader) codeReader = new ZXing.BrowserMultiFormatReader();
     const devices = await codeReader.listVideoInputDevices();
     if (!devices || devices.length === 0) {
-      setResult('❌ カメラが見つかりません<br><span style="font-size:0.9rem;opacity:0.8;">HTTPS環境と権限を確認してください</span>');
+      setCameraStatus('❌ カメラが見つかりません');
       return;
     }
     currentDeviceId = await pickBackCamera(devices);
@@ -402,10 +653,10 @@ async function startZXing() {
       async (result, err) => {
         if (result) {
           const text = (result.getText() || '').trim();
-          await lookupByUuid(text);
+          await lookupByUuid(text, true); // モーダル表示
           stopZXing();
         } else if (err && !(err instanceof ZXing.NotFoundException)) {
-          setResult('⚠️ 読み取りエラー<br><span style="font-size:0.9rem;opacity:0.8;">' + (err.message || String(err)) + '</span>');
+          setCameraStatus('⚠️ 読み取りエラー');
         }
       }
     );
@@ -413,9 +664,9 @@ async function startZXing() {
     els.video.setAttribute('playsinline', 'true');
     els.video.muted = true;
 
-    setResult('👀 スキャン待機中…<br><span style="font-size:0.9rem;opacity:0.8;">QRコードをカメラにかざしてください</span>');
+    setCameraStatus('👀 QRコードをカメラにかざしてください');
   } catch (e) {
-    setResult('⚠️ 初期化失敗<br><span style="font-size:0.9rem;opacity:0.8;">' + (e.message || String(e)) + '</span>');
+    setCameraStatus('⚠️ 初期化失敗: ' + (e.message || String(e)));
   }
 }
 
@@ -426,15 +677,21 @@ function stopZXing() {
   const stream = els.video.srcObject;
   if (stream && stream.getTracks) stream.getTracks().forEach(t => t.stop());
   els.video.srcObject = null;
+  els.cameraOverlay.classList.remove('active');
 }
 
 // イベント
 els.start.addEventListener('click', startZXing);
 els.stop.addEventListener('click', stopZXing);
+els.cameraClose.addEventListener('click', stopZXing);
+els.modalClose.addEventListener('click', hideModal);
+els.modalOverlay.addEventListener('click', (e) => {
+  if (e.target === els.modalOverlay) hideModal();
+});
 els.lookupBtn.addEventListener('click', () => {
   const id = (els.uuidInput.value || '').trim();
   if (!id) return;
-  lookupByUuid(id);
+  lookupByUuid(id, true); // モーダル表示
 });
 </script>
 </body>
