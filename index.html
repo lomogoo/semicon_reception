@@ -473,27 +473,45 @@
 
 <body>
   <div class="container">
-    <h1>半導体キャリアフェス</h1>
+    <h1>半導体キャリアフェス 受付</h1>
 
-    <div class="glass-card camera-section">
-      <div class="button-group">
-        <button id="start-scan">📷 カメラ起動</button>
-        <button id="stop-scan" disabled>⏹ 停止</button>
-      </div>
+    <div id="login-section" class="glass-card">
+      <h2>運営スタッフ ログイン</h2>
+      <form id="login-form" class="space-y-4 mt-4">
+        <div>
+          <label for="login-email" class="block text-sm font-medium text-white/80">メールアドレス</label>
+          <input type="email" id="login-email" required class="input-group #uuid-input w-full" placeholder="staff@example.com">
+        </div>
+        <div>
+          <label for="login-password" class="block text-sm font-medium text-white/80">パスワード</label>
+          <input type="password" id="login-password" required class="input-group #uuid-input w-full" placeholder="********">
+           <p class="text-xs text-white/60 mt-1">※メインアプリで使用するメールアドレスを仮パスワードとして入力してください。</p>
+        </div>
+        <button type="submit" id="login-btn" class="button-group #start-scan w-full">ログイン</button>
+        <p id="login-error" class="text-red-400 text-sm mt-2"></p>
+      </form>
     </div>
+    <div id="scanner-section" style="display: none;">
+        <div class="glass-card camera-section">
+          <div class="button-group">
+            <button id="start-scan">📷 カメラ起動</button>
+            <button id="stop-scan" disabled>⏹ 停止</button>
+            <button id="logout-btn" class=" #stop-scan">ログアウト</button> </div>
+        </div>
 
-    <div class="glass-card">
-      <div class="input-group">
-        <input id="uuid-input" placeholder="UUID手入力（テスト用）" />
-        <button id="lookup-btn">検索</button>
-      </div>
-    </div>
+        <div class="glass-card">
+          <div class="input-group">
+            <input id="uuid-input" placeholder="UUID手入力（テスト用）" />
+            <button id="lookup-btn">検索</button>
+          </div>
+        </div>
 
-    <div class="glass-card result-section">
-      <h2>最近のスキャン</h2>
-      <div id="result">QRコードをスキャンしてください</div>
+        <div class="glass-card result-section">
+          <h2>最近のスキャン</h2>
+          <div id="result">QRコードをスキャンしてください</div>
+        </div>
     </div>
-  </div>
+    </div>
 
   <!-- Fullscreen Camera Overlay -->
   <div class="camera-overlay" id="camera-overlay">
@@ -514,10 +532,35 @@
 /** Supabase接続 */
 const SUPABASE_URL = "https://fsaeuowdijoeqhnrqazx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzYWV1b3dkaWpvZXFobnJxYXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MjA0MjYsImV4cCI6MjA3NTQ5NjQyNn0.xgIQ9jf3qa4oy6Dbc8mVaP8woRDWBwMxLAJwiCGEWmk";
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false }});
+// ★ 初期状態では Anon クライアントとして初期化
+let sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+     auth: { persistSession: false } // セッションは手動管理
+});
 
+// ★ ログイン後に JWT を使ってクライアントを再初期化する関数
+function initializeSupabaseClient(jwt = null) {
+    const headers = {};
+    if (jwt) {
+        headers['Authorization'] = `Bearer ${jwt}`;
+    }
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: headers },
+        auth: { persistSession: false }
+    });
+    console.log("Supabase client re-initialized.", jwt ? "with JWT" : "without JWT");
+}
 // 画面要素
 const els = {
+ // --- ログイン関連 ---
+  loginSection: document.getElementById('login-section'),
+  loginForm: document.getElementById('login-form'),
+  loginEmail: document.getElementById('login-email'),
+  loginPassword: document.getElementById('login-password'), // パスワードとしてメアドを使用
+  loginBtn: document.getElementById('login-btn'),
+  loginError: document.getElementById('login-error'),
+  // --- スキャナー関連 ---
+  scannerSection: document.getElementById('scanner-section'), // 全体を囲むdiv
+  logoutBtn: document.getElementById('logout-btn'), // ログアウトボタン
   start: document.getElementById('start-scan'),
   stop: document.getElementById('stop-scan'),
   video: document.getElementById('video'),
@@ -577,6 +620,84 @@ function formatResult(data) {
   `;
 }
 
+// --- ログイン処理 ---
+async function handleLogin(event) {
+    event.preventDefault(); // フォームのデフォルト送信を防ぐ
+    els.loginError.textContent = '';
+    els.loginBtn.disabled = true;
+    els.loginBtn.textContent = 'ログイン中...';
+
+    const email = els.loginEmail.value.trim();
+    const password = els.loginPassword.value.trim(); // 仮パスワード (メアドと同じ)
+
+    if (!email || !password) {
+        els.loginError.textContent = 'メールアドレスとパスワードを入力してください。';
+        els.loginBtn.disabled = false;
+        els.loginBtn.textContent = 'ログイン';
+        return;
+    }
+
+    try {
+        // ★ Supabase Auth を使ったログイン処理を呼び出す (login エッジ関数は不要に)
+        const { data, error } = await sb.auth.signInWithPassword({
+            email: email,
+            password: password,
+        });
+
+        if (error) {
+            console.error("Login Error:", error);
+            if (error.message.includes('Invalid login credentials')) {
+                els.loginError.textContent = 'メールアドレスまたはパスワードが正しくありません。';
+            } else {
+                 els.loginError.textContent = `ログインエラー: ${error.message}`;
+            }
+            throw error; // エラーを再スローして catch で処理
+        }
+
+        if (data.session && data.user) {
+            console.log("ログイン成功:", data.user.email);
+            const jwt = data.session.access_token;
+            localStorage.setItem('scanner_auth_token', jwt); // トークンを保存
+            localStorage.setItem('scanner_user_email', data.user.email); // メールアドレスも保存（任意）
+
+            initializeSupabaseClient(jwt); // ★ JWTでクライアント再初期化
+            showScannerUI(); // スキャナー画面を表示
+        } else {
+            throw new Error('セッション情報が取得できませんでした。');
+        }
+
+    } catch (error) {
+        // エラー処理 (エラーメッセージは try ブロック内で設定済み)
+        els.loginBtn.disabled = false;
+        els.loginBtn.textContent = 'ログイン';
+    }
+}
+
+// --- ログアウト処理 ---
+function handleLogout() {
+    localStorage.removeItem('scanner_auth_token');
+    localStorage.removeItem('scanner_user_email');
+    initializeSupabaseClient(); // トークンなしでクライアント再初期化
+    showLoginUI(); // ログイン画面を表示
+    stopZXing(); //念のためカメラも停止
+    console.log("ログアウトしました。");
+}
+
+// --- UI表示切り替え ---
+function showLoginUI() {
+    els.loginSection.style.display = 'block';
+    els.scannerSection.style.display = 'none';
+    els.loginPassword.value = ''; // パスワード欄クリア
+}
+
+function showScannerUI() {
+    els.loginSection.style.display = 'none';
+    els.scannerSection.style.display = 'block';
+    els.loginError.textContent = ''; // エラーメッセージクリア
+    els.loginBtn.disabled = false;   // ボタン状態リセット
+    els.loginBtn.textContent = 'ログイン';
+}
+ 
 // Supabase RPC: uuid → ユーザー情報
 async function lookupByUuid(id, showInModal = false) {
   setCameraStatus('🔍 照会中…');
@@ -680,7 +801,10 @@ function stopZXing() {
   els.cameraOverlay.classList.remove('active');
 }
 
-// イベント
+// --- イベントリスナー ---
+els.loginForm.addEventListener('submit', handleLogin); // ログインフォーム
+els.logoutBtn.addEventListener('click', handleLogout); // ログアウトボタン
+
 els.start.addEventListener('click', startZXing);
 els.stop.addEventListener('click', stopZXing);
 els.cameraClose.addEventListener('click', stopZXing);
@@ -693,6 +817,26 @@ els.lookupBtn.addEventListener('click', () => {
   if (!id) return;
   lookupByUuid(id, true); // モーダル表示
 });
+
+// --- 初期化処理 ---
+function initializeApp() {
+    const token = localStorage.getItem('scanner_auth_token');
+    if (token) {
+        console.log("既存のトークンが見つかりました。");
+        // ★ ここでトークンが有効か検証するのが理想 (例: getUser を試す)
+        // 今回は簡略化のため、トークンがあればログイン済みとみなす
+        initializeSupabaseClient(token);
+        showScannerUI();
+    } else {
+        console.log("トークンが見つかりません。ログイン画面を表示します。");
+        initializeSupabaseClient(); // トークンなしで初期化
+        showLoginUI();
+    }
+}
+
+// アプリケーション初期化を実行
+initializeApp();
+
 </script>
 </body>
 </html>
