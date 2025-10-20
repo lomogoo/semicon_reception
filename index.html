@@ -4,582 +4,110 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>運営スキャナ</title>
-
-<!-- Supabase v2 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- ZXing: UMDビルド -->
 <script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
-
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-    padding: 1.5rem;
-    color: #1a1a1a;
-  }
-
-  .container {
-    max-width: 600px;
-    margin: 0 auto;
-  }
-
-  h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: white;
-    text-align: center;
-    margin-bottom: 2rem;
-    letter-spacing: -0.02em;
-  }
-
-  /* Liquid Glass Card */
-  .glass-card {
-    background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .glass-card h2 {
-    color: white;
-    font-size: 1.25rem;
-    margin-bottom: 1rem;
-  }
-
-  /* Camera Section */
-  .camera-section {
-    text-align: center;
-  }
-
-  #video {
-    width: 100%;
-    max-width: 500px;
-    height: auto;
-    aspect-ratio: 4/3;
-    border-radius: 16px;
-    background: #000;
-    margin: 1rem auto;
-    display: block;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Fullscreen Camera Overlay */
-  .camera-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: #000;
-    z-index: 1000;
-    flex-direction: column;
-  }
-
-  .camera-overlay.active {
-    display: flex;
-  }
-
-  .camera-overlay #video {
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    border-radius: 0;
-    margin: 0;
-    object-fit: cover;
-  }
-
-  .camera-close-btn {
-    position: absolute;
-    top: 2rem;
-    right: 2rem;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(20px);
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    z-index: 1001;
-  }
-
-  .camera-close-btn:hover {
-    background: rgba(255, 255, 255, 0.5);
-    transform: scale(1.1);
-  }
-
-  .camera-status {
-    position: absolute;
-    bottom: 3rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(20px);
-    padding: 1rem 2rem;
-    border-radius: 16px;
-    color: white;
-    font-size: 1rem;
-    text-align: center;
-    z-index: 1001;
-  }
-
-  /* Result Modal Popup */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
-    z-index: 2000;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-  }
-
-  .modal-overlay.active {
-    display: flex;
-    animation: fadeIn 0.3s ease;
-  }
-
-  .modal-content {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(40px) saturate(180%);
-    border-radius: 28px;
-    padding: 2.5rem;
-    max-width: 500px;
-    width: 100%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    position: relative;
-    animation: slideUp 0.4s ease;
-    color: #1a1a1a;
-  }
-
-  @keyframes slideUp {
-    from { 
-      opacity: 0; 
-      transform: translateY(30px) scale(0.95);
-    }
-    to { 
-      opacity: 1; 
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  .modal-close-btn {
-    position: absolute;
-    top: 1.5rem;
-    right: 1.5rem;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.1);
-    border: none;
-    color: #666;
-    font-size: 1.25rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  }
-
-  .modal-close-btn:hover {
-    background: rgba(0, 0, 0, 0.2);
-    transform: scale(1.1);
-  }
-
-  .modal-badge {
-    display: inline-block;
-    padding: 0.75rem 1.5rem;
-    border-radius: 16px;
-    font-size: 1rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .modal-badge-pre {
-    background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-    color: white;
-    box-shadow: 0 4px 16px rgba(52, 199, 89, 0.4);
-  }
-
-  .modal-badge-onsite {
-    background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-    color: white;
-    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.4);
-  }
-
-  .modal-user-name {
-    font-size: 2.25rem;
-    font-weight: 800;
-    color: #1a1a1a;
-    margin-bottom: 1.5rem;
-    letter-spacing: -0.03em;
-    line-height: 1.2;
-  }
-
-  .modal-user-info {
-    font-size: 1.35rem;
-    color: #333;
-    margin-bottom: 0.75rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .modal-user-meta {
-    font-size: 0.8rem;
-    color: #999;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 2px solid rgba(0, 0, 0, 0.1);
-    font-family: 'SF Mono', Monaco, monospace;
-    line-height: 1.8;
-  }
-
-  /* Buttons */
-  .button-group {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
-  }
-
-  button {
-    flex: 1;
-    min-width: 140px;
-    padding: 1rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    border: none;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-family: inherit;
-    backdrop-filter: blur(10px);
-  }
-
-  #start-scan {
-    background: rgba(52, 199, 89, 0.9);
-    color: white;
-    box-shadow: 0 4px 16px rgba(52, 199, 89, 0.4);
-  }
-
-  #start-scan:hover:not(:disabled) {
-    background: rgba(52, 199, 89, 1);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(52, 199, 89, 0.5);
-  }
-
-  #stop-scan {
-    background: rgba(255, 59, 48, 0.9);
-    color: white;
-    box-shadow: 0 4px 16px rgba(255, 59, 48, 0.4);
-  }
-
-  #stop-scan:hover:not(:disabled) {
-    background: rgba(255, 59, 48, 1);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 59, 48, 0.5);
-  }
-
-  #logout-btn {
-    background: rgba(156, 163, 175, 0.9);
-    color: white;
-    box-shadow: 0 4px 16px rgba(156, 163, 175, 0.4);
-  }
-
-  #logout-btn:hover:not(:disabled) {
-    background: rgba(156, 163, 175, 1);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(156, 163, 175, 0.5);
-  }
-
-  button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  /* Manual Input Section */
-  .input-group {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-
-  #uuid-input {
-    flex: 1;
-    min-width: 200px;
-    padding: 0.875rem 1rem;
-    font-size: 0.95rem;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    font-family: 'SF Mono', Monaco, monospace;
-    backdrop-filter: blur(10px);
-  }
-
-  #uuid-input::placeholder {
-    color: rgba(255, 255, 255, 0.6);
-  }
-
-  #uuid-input:focus {
-    outline: none;
-    border-color: rgba(255, 255, 255, 0.6);
-    background: rgba(255, 255, 255, 0.25);
-  }
-
-  #lookup-btn {
-    background: rgba(0, 122, 255, 0.9);
-    color: white;
-    padding: 0.875rem 1.5rem;
-    box-shadow: 0 4px 16px rgba(0, 122, 255, 0.4);
-  }
-
-  #lookup-btn:hover {
-    background: rgba(0, 122, 255, 1);
-    transform: translateY(-2px);
-  }
-
-  /* Result Display */
-  .result-section {
-    min-height: 200px;
-  }
-
-  .result-section h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: white;
-    margin-bottom: 1rem;
-    letter-spacing: -0.01em;
-  }
-
-  #result {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
-    border-radius: 16px;
-    padding: 1.5rem;
-    font-size: 0.95rem;
-    color: white;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    min-height: 150px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .badge {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .badge-pre {
-    background: rgba(52, 199, 89, 0.3);
-    color: #34c759;
-    border: 2px solid rgba(52, 199, 89, 0.5);
-  }
-
-  .badge-onsite {
-    background: rgba(0, 122, 255, 0.3);
-    color: #007aff;
-    border: 2px solid rgba(0, 122, 255, 0.5);
-  }
-
-  .user-name {
-    font-size: 2rem;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 1rem;
-    letter-spacing: -0.02em;
-  }
-
-  .user-info {
-    font-size: 1.25rem;
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-  }
-
-  .user-meta {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    font-family: 'SF Mono', Monaco, monospace;
-  }
-
-  .input-field {
-    margin-bottom: 1rem;
-  }
-
-  .input-field label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 0.5rem;
-  }
-
-  .input-field input {
-    width: 100%;
-    padding: 0.875rem 1rem;
-    font-size: 0.95rem;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    font-family: inherit;
-    backdrop-filter: blur(10px);
-    box-sizing: border-box;
-  }
-
-  .input-field input::placeholder {
-    color: rgba(255, 255, 255, 0.6);
-  }
-
-  .input-field input:focus {
-    outline: none;
-    border-color: rgba(255, 255, 255, 0.6);
-    background: rgba(255, 255, 255, 0.25);
-  }
-
-  .helper-text {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
-    margin-top: 0.5rem;
-  }
-
-  .error-text {
-    color: #ff4444;
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
-  }
-
-  @media (max-width: 480px) {
-    body {
-      padding: 1rem;
-    }
-
-    h1 {
-      font-size: 1.5rem;
-    }
-
-    .button-group {
-      flex-direction: column;
-    }
-
-    button {
-      width: 100%;
-    }
-
-    .user-name {
-      font-size: 1.5rem;
-    }
-
-    .user-info {
-      font-size: 1.1rem;
-    }
-  }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 1.5rem; color: #1a1a1a; }
+.container { max-width: 600px; margin: 0 auto; }
+h1 { font-size: 1.75rem; font-weight: 700; color: white; text-align: center; margin-bottom: 2rem; }
+.glass-card { background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(40px) saturate(180%); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2); padding: 1.5rem; margin-bottom: 1.5rem; }
+.glass-card h2 { color: white; font-size: 1.25rem; margin-bottom: 1rem; }
+.input-field { margin-bottom: 1rem; }
+.input-field label { display: block; font-size: 0.875rem; font-weight: 500; color: rgba(255, 255, 255, 0.8); margin-bottom: 0.5rem; }
+.input-field input { width: 100%; padding: 0.875rem 1rem; font-size: 0.95rem; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 12px; background: rgba(255, 255, 255, 0.2); color: white; font-family: inherit; }
+.input-field input::placeholder { color: rgba(255, 255, 255, 0.6); }
+.input-field input:focus { outline: none; border-color: rgba(255, 255, 255, 0.6); background: rgba(255, 255, 255, 0.25); }
+.helper-text { font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem; }
+.error-text { color: #ff4444; font-size: 0.875rem; margin-top: 0.5rem; }
+button { padding: 1rem 1.5rem; font-size: 1rem; font-weight: 600; border: none; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; font-family: inherit; width: 100%; }
+#login-btn { background: rgba(52, 199, 89, 0.9); color: white; margin-top: 1rem; }
+#login-btn:hover:not(:disabled) { background: rgba(52, 199, 89, 1); transform: translateY(-2px); }
+#login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#scanner-section { display: none; }
+.button-group { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.button-group button { flex: 1; min-width: 120px; }
+#start-scan { background: rgba(52, 199, 89, 0.9); color: white; }
+#stop-scan { background: rgba(255, 59, 48, 0.9); color: white; }
+#logout-btn { background: rgba(156, 163, 175, 0.9); color: white; }
+#start-scan:disabled, #stop-scan:disabled { opacity: 0.5; }
+.camera-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 1000; }
+.camera-overlay.active { display: flex; flex-direction: column; }
+#video { width: 100%; height: 100%; object-fit: cover; }
+.camera-close-btn { position: absolute; top: 2rem; right: 2rem; width: 50px; height: 50px; border-radius: 50%; background: rgba(255, 255, 255, 0.3); border: 2px solid rgba(255, 255, 255, 0.5); color: white; font-size: 1.5rem; cursor: pointer; z-index: 1001; }
+.camera-status { position: absolute; bottom: 3rem; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); padding: 1rem 2rem; border-radius: 16px; color: white; z-index: 1001; }
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); z-index: 2000; align-items: center; justify-content: center; padding: 1rem; }
+.modal-overlay.active { display: flex; }
+.modal-content { background: rgba(255, 255, 255, 0.95); border-radius: 28px; padding: 2.5rem; max-width: 500px; width: 100%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); position: relative; }
+.modal-close-btn { position: absolute; top: 1.5rem; right: 1.5rem; width: 36px; height: 36px; border-radius: 50%; background: rgba(0, 0, 0, 0.1); border: none; color: #666; font-size: 1.25rem; cursor: pointer; }
+.modal-badge { display: inline-block; padding: 0.75rem 1.5rem; border-radius: 16px; font-size: 1rem; font-weight: 700; margin-bottom: 1.5rem; text-transform: uppercase; }
+.modal-badge-pre { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); color: white; }
+.modal-badge-onsite { background: linear-gradient(135deg, #007aff 0%, #0051d5 100%); color: white; }
+.modal-user-name { font-size: 2.25rem; font-weight: 800; color: #1a1a1a; margin-bottom: 1.5rem; }
+.modal-user-info { font-size: 1.35rem; color: #333; margin-bottom: 0.75rem; font-weight: 600; }
+.modal-user-meta { font-size: 0.8rem; color: #999; margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid rgba(0, 0, 0, 0.1); font-family: 'SF Mono', Monaco, monospace; }
+.result-section { min-height: 200px; }
+.result-section h2 { font-size: 1.25rem; font-weight: 600; color: white; margin-bottom: 1rem; }
+#result { background: rgba(255, 255, 255, 0.15); border-radius: 16px; padding: 1.5rem; font-size: 0.95rem; color: white; min-height: 150px; border: 1px solid rgba(255, 255, 255, 0.2); }
+.input-group { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+#uuid-input { flex: 1; min-width: 200px; padding: 0.875rem 1rem; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 12px; background: rgba(255, 255, 255, 0.2); color: white; font-family: 'SF Mono', Monaco, monospace; }
+#lookup-btn { background: rgba(0, 122, 255, 0.9); color: white; padding: 0.875rem 1.5rem; flex: 0 0 auto; }
 </style>
 </head>
-
 <body>
-  <div class="container">
-    <h1>半導体キャリアフェス 受付</h1>
-
-    <div id="login-section" class="glass-card">
-  <h2>運営スタッフ ログイン</h2>
-  <form id="login-form">
-    <div class="input-field">
-      <label for="login-email">メールアドレス</label>
-      <input type="email" id="login-email" required placeholder="staff@example.com">
-    </div>
-    <div class="input-field">
-      <label for="login-password">パスワード</label>
-      <input type="password" id="login-password" required placeholder="********">
-      <p class="helper-text">※Supabase Authで作成されたスタッフユーザーのパスワードを入力してください。</p>
-    </div>
-    <button type="submit" id="login-btn" style="width: 100%; background: rgba(52, 199, 89, 0.9); color: white;">ログイン</button>
-    <p id="login-error" class="error-text"></p>
-  </form>
+<div class="container">
+<h1>半導体キャリアフェス 受付</h1>
+<div id="login-section" class="glass-card">
+<h2>運営スタッフ ログイン</h2>
+<form id="login-form">
+<div class="input-field">
+<label for="login-email">メールアドレス</label>
+<input type="email" id="login-email" required placeholder="staff@example.com">
 </div>
-
-    <div id="scanner-section" style="display: none;">
-      <div class="glass-card camera-section">
-        <div class="button-group">
-          <button id="start-scan">📷 カメラ起動</button>
-          <button id="stop-scan" disabled>⏹ 停止</button>
-          <button id="logout-btn">ログアウト</button>
-        </div>
-      </div>
-
-      <div class="glass-card">
-        <div class="input-group">
-          <input id="uuid-input" placeholder="UUID手入力（テスト用）" />
-          <button id="lookup-btn">検索</button>
-        </div>
-      </div>
-
-      <div class="glass-card result-section">
-        <h2>最近のスキャン</h2>
-        <div id="result">QRコードをスキャンしてください</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Fullscreen Camera Overlay -->
-  <div class="camera-overlay" id="camera-overlay">
-    <button class="camera-close-btn" id="camera-close">✕</button>
-    <video id="video" autoplay playsinline muted></video>
-    <div class="camera-status" id="camera-status">QRコードをカメラにかざしてください</div>
-  </div>
-
-  <!-- Result Modal Popup -->
-  <div class="modal-overlay" id="modal-overlay">
-    <div class="modal-content">
-      <button class="modal-close-btn" id="modal-close">✕</button>
-      <div id="modal-result"></div>
-    </div>
-  </div>
-
+<div class="input-field">
+<label for="login-password">パスワード</label>
+<input type="password" id="login-password" required placeholder="********">
+<p class="helper-text">Supabase Authで作成したパスワードを入力してください</p>
+</div>
+<button type="submit" id="login-btn">ログイン</button>
+<p id="login-error" class="error-text"></p>
+</form>
+</div>
+<div id="scanner-section">
+<div class="glass-card">
+<div class="button-group">
+<button id="start-scan">📷 カメラ起動</button>
+<button id="stop-scan" disabled>⏹ 停止</button>
+<button id="logout-btn">ログアウト</button>
+</div>
+</div>
+<div class="glass-card">
+<div class="input-group">
+<input id="uuid-input" placeholder="UUID手入力（テスト用）">
+<button id="lookup-btn">検索</button>
+</div>
+</div>
+<div class="glass-card result-section">
+<h2>最近のスキャン</h2>
+<div id="result">QRコードをスキャンしてください</div>
+</div>
+</div>
+</div>
+<div class="camera-overlay" id="camera-overlay">
+<button class="camera-close-btn" id="camera-close">✕</button>
+<video id="video" autoplay playsinline muted></video>
+<div class="camera-status" id="camera-status">QRコードをカメラにかざしてください</div>
+</div>
+<div class="modal-overlay" id="modal-overlay">
+<div class="modal-content">
+<button class="modal-close-btn" id="modal-close">✕</button>
+<div id="modal-result"></div>
+</div>
+</div>
 <script>
-/** Supabase接続 */
 const SUPABASE_URL = "https://fsaeuowdijoeqhnrqazx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzYWV1b3dkaWpvZXFobnJxYXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MjA0MjYsImV4cCI6MjA3NTQ5NjQyNn0.xgIQ9jf3qa4oy6Dbc8mVaP8woRDWBwMxLAJwiCGEWmk";
 
-// 単一のクライアントインスタンスを管理
 let sb = null;
 
 function initializeSupabaseClient(jwt = null) {
@@ -600,7 +128,6 @@ function initializeSupabaseClient(jwt = null) {
     console.log("Supabase client initialized", jwt ? "with JWT" : "without JWT");
 }
 
-// 画面要素
 const els = {
   loginSection: document.getElementById('login-section'),
   loginForm: document.getElementById('login-form'),
@@ -661,21 +188,24 @@ function formatResult(data) {
   const badgeText = data.registration_type === 'pre_registration' ? '✅ 事前登録' : '🟦 当日受付';
   
   return `
-    <div class="badge ${badgeClass}">${badgeText}</div>
+    <div class="badge ${badgeClass}" style="background: ${badgeClass === 'badge-pre' ? 'rgba(52, 199, 89, 0.3)' : 'rgba(0, 122, 255, 0.3)'}; color: ${badgeClass === 'badge-pre' ? '#34c759' : '#007aff'}; display: inline-block; padding: 0.5rem 1rem; border-radius: 12px; font-weight: 700; margin-bottom: 1rem;">${badgeText}</div>
     <div class="user-name">${data.name || '-'}</div>
     <div class="user-info">📧 ${data.email || '-'}</div>
   `;
 }
 
-// ログイン処理
 async function handleLogin(event) {
     event.preventDefault();
+    console.log('ログインボタンがクリックされました');
+    
     els.loginError.textContent = '';
     els.loginBtn.disabled = true;
     els.loginBtn.textContent = 'ログイン中...';
 
     const email = els.loginEmail.value.trim();
     const password = els.loginPassword.value.trim();
+
+    console.log('入力値:', { email, password });
 
     if (!email || !password) {
         els.loginError.textContent = 'メールアドレスとパスワードを入力してください。';
@@ -685,24 +215,24 @@ async function handleLogin(event) {
     }
 
     try {
-        // 初回のみクライアント初期化
         if (!sb) {
             initializeSupabaseClient();
         }
 
+        console.log('ログイン試行中...');
         const { data, error } = await sb.auth.signInWithPassword({
             email: email,
             password: password,
         });
 
+        console.log('ログイン結果:', { data, error });
+
         if (error) {
             console.error("Login Error:", error);
-            if (error.message.includes('Invalid login credentials')) {
-                els.loginError.textContent = 'メールアドレスまたはパスワードが正しくありません。';
-            } else {
-                els.loginError.textContent = `ログインエラー: ${error.message}`;
-            }
-            throw error;
+            els.loginError.textContent = error.message || 'ログインに失敗しました';
+            els.loginBtn.disabled = false;
+            els.loginBtn.textContent = 'ログイン';
+            return;
         }
 
         if (data.session && data.user) {
@@ -718,12 +248,13 @@ async function handleLogin(event) {
         }
 
     } catch (error) {
+        console.error('予期しないエラー:', error);
+        els.loginError.textContent = 'エラーが発生しました。Consoleを確認してください。';
         els.loginBtn.disabled = false;
         els.loginBtn.textContent = 'ログイン';
     }
 }
 
-// ログアウト処理
 function handleLogout() {
     localStorage.removeItem('scanner_auth_token');
     localStorage.removeItem('scanner_user_email');
@@ -733,7 +264,6 @@ function handleLogout() {
     console.log("ログアウトしました。");
 }
 
-// UI表示切り替え
 function showLoginUI() {
     els.loginSection.style.display = 'block';
     els.scannerSection.style.display = 'none';
@@ -748,7 +278,6 @@ function showScannerUI() {
     els.loginBtn.textContent = 'ログイン';
 }
 
-// RPC: UUID → ユーザー情報
 async function lookupByUuid(id, showInModal = false) {
   setCameraStatus('🔍 照会中…');
   setResult('🔍 照会中…');
@@ -760,19 +289,16 @@ async function lookupByUuid(id, showInModal = false) {
       throw new Error('Supabaseクライアントが初期化されていません');
     }
 
-    console.log('Calling lookup_user with ID:', id);
+    console.log('lookup_user呼び出し:', id);
     
     const { data, error } = await sb
       .rpc('lookup_user', { p_id: id })
       .single();
 
+    console.log('RPC結果:', { data, error });
+
     if (error) {
       console.error('RPC Error:', error);
-      if (error.code === 'PGRST116') {
-        throw new Error('該当ユーザーが見つかりません');
-      } else if (error.code === '403') {
-        throw new Error('アクセス権がありません（ログインしてください）');
-      }
       throw error;
     }
 
@@ -802,7 +328,6 @@ async function lookupByUuid(id, showInModal = false) {
   }
 }
 
-/* ZXing スキャナ */
 let codeReader = null;
 let currentDeviceId = null;
 
@@ -842,7 +367,7 @@ async function startZXing() {
           await lookupByUuid(text, true);
           stopZXing();
         } else if (err && !(err instanceof ZXing.NotFoundException)) {
-          setCameraStatus('⚠️ 読み取りエラー';
+          setCameraStatus('⚠️ 読み取りエラー');
         }
       }
     );
@@ -866,7 +391,6 @@ function stopZXing() {
   els.cameraOverlay.classList.remove('active');
 }
 
-// イベントリスナー
 els.loginForm.addEventListener('submit', handleLogin);
 els.logoutBtn.addEventListener('click', handleLogout);
 
@@ -883,7 +407,6 @@ els.lookupBtn.addEventListener('click', () => {
   lookupByUuid(id, true);
 });
 
-// 初期化処理
 function initializeApp() {
     const token = localStorage.getItem('scanner_auth_token');
     
@@ -893,7 +416,7 @@ function initializeApp() {
         console.log("既存のトークンが見つかりました。");
         showScannerUI();
     } else {
-        console.log("トークンが見つかりません。ログイン画面を表示します。");
+        console.log("ログイン画面を表示します。");
         showLoginUI();
     }
 }
