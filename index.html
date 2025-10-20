@@ -599,11 +599,10 @@ function formatModalResult(data) {
   return `
     <div class="modal-badge ${badgeClass}">${badgeText}</div>
     <div class="modal-user-name">${data.name || '-'}</div>
-    <div class="modal-user-info">🏫 ${data.school || '-'}</div>
-    <div class="modal-user-info">📚 ${data.department || '-'}</div>
+    <div class="modal-user-info">📧 ${data.email || '-'}</div>
     <div class="modal-user-meta">
       UUID: ${data.id}<br>
-      登録区分: ${data.registration_type || '-'}
+      登録区分: ${data.registration_type === 'pre_registration' ? '事前登録' : '当日受付'}
     </div>
   `;
 }
@@ -615,11 +614,9 @@ function formatResult(data) {
   return `
     <div class="badge ${badgeClass}">${badgeText}</div>
     <div class="user-name">${data.name || '-'}</div>
-    <div class="user-info">🏫 ${data.school || '-'}</div>
-    <div class="user-info">📚 ${data.department || '-'}</div>
+    <div class="user-info">📧 ${data.email || '-'}</div>
   `;
 }
-
 // --- ログイン処理 ---
 async function handleLogin(event) {
     event.preventDefault(); // フォームのデフォルト送信を防ぐ
