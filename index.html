@@ -51,6 +51,12 @@
     margin-bottom: 1.5rem;
   }
 
+  .glass-card h2 {
+    color: white;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
   /* Camera Section */
   .camera-section {
     text-align: center;
@@ -301,6 +307,18 @@
     box-shadow: 0 6px 20px rgba(255, 59, 48, 0.5);
   }
 
+  #logout-btn {
+    background: rgba(156, 163, 175, 0.9);
+    color: white;
+    box-shadow: 0 4px 16px rgba(156, 163, 175, 0.4);
+  }
+
+  #logout-btn:hover:not(:disabled) {
+    background: rgba(156, 163, 175, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(156, 163, 175, 0.5);
+  }
+
   button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -375,21 +393,6 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
-  /* Result Content Styling */
-  .result-content {
-    display: none;
-  }
-
-  .result-content.active {
-    display: block;
-    animation: fadeIn 0.4s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
   .badge {
     display: inline-block;
     padding: 0.5rem 1rem;
@@ -437,10 +440,51 @@
     font-family: 'SF Mono', Monaco, monospace;
   }
 
-  .divider {
-    height: 1px;
+  .input-field {
+    margin-bottom: 1rem;
+  }
+
+  .input-field label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.5rem;
+  }
+
+  .input-field input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-size: 0.95rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.2);
-    margin: 1.5rem 0;
+    color: white;
+    font-family: inherit;
+    backdrop-filter: blur(10px);
+    box-sizing: border-box;
+  }
+
+  .input-field input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .input-field input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .helper-text {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 0.5rem;
+  }
+
+  .error-text {
+    color: #ff4444;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
   }
 
   @media (max-width: 480px) {
@@ -477,41 +521,43 @@
 
     <div id="login-section" class="glass-card">
       <h2>運営スタッフ ログイン</h2>
-      <form id="login-form" class="space-y-4 mt-4">
-        <div>
-          <label for="login-email" class="block text-sm font-medium text-white/80">メールアドレス</label>
-          <input type="email" id="login-email" required class="input-group #uuid-input w-full" placeholder="staff@example.com">
+      <form id="login-form">
+        <div class="input-field">
+          <label for="login-email">メールアドレス</label>
+          <input type="email" id="login-email" required placeholder="staff@example.com">
         </div>
-        <div>
-          <label for="login-password" class="block text-sm font-medium text-white/80">パスワード</label>
-          <input type="password" id="login-password" required class="input-group #uuid-input w-full" placeholder="********">
-           <p class="text-xs text-white/60 mt-1">※メインアプリで使用するメールアドレスを仮パスワードとして入力してください。</p>
+        <div class="input-field">
+          <label for="login-password">パスワード</label>
+          <input type="password" id="login-password" required placeholder="********">
+          <p class="helper-text">※Supabase Authで作成されたスタッフユーザーのパスワードを入力してください。</p>
         </div>
-        <button type="submit" id="login-btn" class="button-group #start-scan w-full">ログイン</button>
-        <p id="login-error" class="text-red-400 text-sm mt-2"></p>
+        <button type="submit" id="login-btn" style="width: 100%; background: rgba(52, 199, 89, 0.9); color: white;">ログイン</button>
+        <p id="login-error" class="error-text"></p>
       </form>
     </div>
+
     <div id="scanner-section" style="display: none;">
-        <div class="glass-card camera-section">
-          <div class="button-group">
-            <button id="start-scan">📷 カメラ起動</button>
-            <button id="stop-scan" disabled>⏹ 停止</button>
-            <button id="logout-btn" class=" #stop-scan">ログアウト</button> </div>
+      <div class="glass-card camera-section">
+        <div class="button-group">
+          <button id="start-scan">📷 カメラ起動</button>
+          <button id="stop-scan" disabled>⏹ 停止</button>
+          <button id="logout-btn">ログアウト</button>
         </div>
+      </div>
 
-        <div class="glass-card">
-          <div class="input-group">
-            <input id="uuid-input" placeholder="UUID手入力（テスト用）" />
-            <button id="lookup-btn">検索</button>
-          </div>
+      <div class="glass-card">
+        <div class="input-group">
+          <input id="uuid-input" placeholder="UUID手入力（テスト用）" />
+          <button id="lookup-btn">検索</button>
         </div>
+      </div>
 
-        <div class="glass-card result-section">
-          <h2>最近のスキャン</h2>
-          <div id="result">QRコードをスキャンしてください</div>
-        </div>
+      <div class="glass-card result-section">
+        <h2>最近のスキャン</h2>
+        <div id="result">QRコードをスキャンしてください</div>
+      </div>
     </div>
-    </div>
+  </div>
 
   <!-- Fullscreen Camera Overlay -->
   <div class="camera-overlay" id="camera-overlay">
@@ -532,35 +578,38 @@
 /** Supabase接続 */
 const SUPABASE_URL = "https://fsaeuowdijoeqhnrqazx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzYWV1b3dkaWpvZXFobnJxYXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MjA0MjYsImV4cCI6MjA3NTQ5NjQyNn0.xgIQ9jf3qa4oy6Dbc8mVaP8woRDWBwMxLAJwiCGEWmk";
-// ★ 初期状態では Anon クライアントとして初期化
-let sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-     auth: { persistSession: false } // セッションは手動管理
-});
 
-// ★ ログイン後に JWT を使ってクライアントを再初期化する関数
+// 単一のクライアントインスタンスを管理
+let sb = null;
+
 function initializeSupabaseClient(jwt = null) {
-    const headers = {};
+    const options = {
+        auth: { 
+            persistSession: false,
+            autoRefreshToken: false
+        }
+    };
+    
     if (jwt) {
-        headers['Authorization'] = `Bearer ${jwt}`;
+        options.global = { 
+            headers: { 'Authorization': `Bearer ${jwt}` } 
+        };
     }
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: { headers: headers },
-        auth: { persistSession: false }
-    });
-    console.log("Supabase client re-initialized.", jwt ? "with JWT" : "without JWT");
+    
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, options);
+    console.log("Supabase client initialized", jwt ? "with JWT" : "without JWT");
 }
+
 // 画面要素
 const els = {
- // --- ログイン関連 ---
   loginSection: document.getElementById('login-section'),
   loginForm: document.getElementById('login-form'),
   loginEmail: document.getElementById('login-email'),
-  loginPassword: document.getElementById('login-password'), // パスワードとしてメアドを使用
+  loginPassword: document.getElementById('login-password'),
   loginBtn: document.getElementById('login-btn'),
   loginError: document.getElementById('login-error'),
-  // --- スキャナー関連 ---
-  scannerSection: document.getElementById('scanner-section'), // 全体を囲むdiv
-  logoutBtn: document.getElementById('logout-btn'), // ログアウトボタン
+  scannerSection: document.getElementById('scanner-section'),
+  logoutBtn: document.getElementById('logout-btn'),
   start: document.getElementById('start-scan'),
   stop: document.getElementById('stop-scan'),
   video: document.getElementById('video'),
@@ -617,15 +666,16 @@ function formatResult(data) {
     <div class="user-info">📧 ${data.email || '-'}</div>
   `;
 }
-// --- ログイン処理 ---
+
+// ログイン処理
 async function handleLogin(event) {
-    event.preventDefault(); // フォームのデフォルト送信を防ぐ
+    event.preventDefault();
     els.loginError.textContent = '';
     els.loginBtn.disabled = true;
     els.loginBtn.textContent = 'ログイン中...';
 
     const email = els.loginEmail.value.trim();
-    const password = els.loginPassword.value.trim(); // 仮パスワード (メアドと同じ)
+    const password = els.loginPassword.value.trim();
 
     if (!email || !password) {
         els.loginError.textContent = 'メールアドレスとパスワードを入力してください。';
@@ -635,7 +685,11 @@ async function handleLogin(event) {
     }
 
     try {
-        // ★ Supabase Auth を使ったログイン処理を呼び出す (login エッジ関数は不要に)
+        // 初回のみクライアント初期化
+        if (!sb) {
+            initializeSupabaseClient();
+        }
+
         const { data, error } = await sb.auth.signInWithPassword({
             email: email,
             password: password,
@@ -646,56 +700,55 @@ async function handleLogin(event) {
             if (error.message.includes('Invalid login credentials')) {
                 els.loginError.textContent = 'メールアドレスまたはパスワードが正しくありません。';
             } else {
-                 els.loginError.textContent = `ログインエラー: ${error.message}`;
+                els.loginError.textContent = `ログインエラー: ${error.message}`;
             }
-            throw error; // エラーを再スローして catch で処理
+            throw error;
         }
 
         if (data.session && data.user) {
             console.log("ログイン成功:", data.user.email);
             const jwt = data.session.access_token;
-            localStorage.setItem('scanner_auth_token', jwt); // トークンを保存
-            localStorage.setItem('scanner_user_email', data.user.email); // メールアドレスも保存（任意）
+            localStorage.setItem('scanner_auth_token', jwt);
+            localStorage.setItem('scanner_user_email', data.user.email);
 
-            initializeSupabaseClient(jwt); // ★ JWTでクライアント再初期化
-            showScannerUI(); // スキャナー画面を表示
+            initializeSupabaseClient(jwt);
+            showScannerUI();
         } else {
             throw new Error('セッション情報が取得できませんでした。');
         }
 
     } catch (error) {
-        // エラー処理 (エラーメッセージは try ブロック内で設定済み)
         els.loginBtn.disabled = false;
         els.loginBtn.textContent = 'ログイン';
     }
 }
 
-// --- ログアウト処理 ---
+// ログアウト処理
 function handleLogout() {
     localStorage.removeItem('scanner_auth_token');
     localStorage.removeItem('scanner_user_email');
-    initializeSupabaseClient(); // トークンなしでクライアント再初期化
-    showLoginUI(); // ログイン画面を表示
-    stopZXing(); //念のためカメラも停止
+    initializeSupabaseClient(null);
+    showLoginUI();
+    stopZXing();
     console.log("ログアウトしました。");
 }
 
-// --- UI表示切り替え ---
+// UI表示切り替え
 function showLoginUI() {
     els.loginSection.style.display = 'block';
     els.scannerSection.style.display = 'none';
-    els.loginPassword.value = ''; // パスワード欄クリア
+    els.loginPassword.value = '';
 }
 
 function showScannerUI() {
     els.loginSection.style.display = 'none';
     els.scannerSection.style.display = 'block';
-    els.loginError.textContent = ''; // エラーメッセージクリア
-    els.loginBtn.disabled = false;   // ボタン状態リセット
+    els.loginError.textContent = '';
+    els.loginBtn.disabled = false;
     els.loginBtn.textContent = 'ログイン';
 }
- 
-// Supabase RPC: uuid → ユーザー情報
+
+// RPC: UUID → ユーザー情報
 async function lookupByUuid(id, showInModal = false) {
   setCameraStatus('🔍 照会中…');
   setResult('🔍 照会中…');
@@ -703,8 +756,25 @@ async function lookupByUuid(id, showInModal = false) {
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRe.test(id)) throw new Error('UUID形式が不正です');
 
-    const { data, error } = await sb.rpc('lookup_user', { p_id: id }).single();
-    if (error) throw error;
+    if (!sb) {
+      throw new Error('Supabaseクライアントが初期化されていません');
+    }
+
+    console.log('Calling lookup_user with ID:', id);
+    
+    const { data, error } = await sb
+      .rpc('lookup_user', { p_id: id })
+      .single();
+
+    if (error) {
+      console.error('RPC Error:', error);
+      if (error.code === 'PGRST116') {
+        throw new Error('該当ユーザーが見つかりません');
+      } else if (error.code === '403') {
+        throw new Error('アクセス権がありません（ログインしてください）');
+      }
+      throw error;
+    }
 
     if (!data) {
       const errorMsg = '❌ 該当なし<br><span style="font-size:0.9rem;opacity:0.8;">このUUIDは登録されていません</span>';
@@ -716,15 +786,13 @@ async function lookupByUuid(id, showInModal = false) {
       return;
     }
 
-    // モーダル表示
     if (showInModal) {
       showModal(formatModalResult(data));
     }
-    
-    // 履歴として下部にも表示
     setResult(formatResult(data));
     
   } catch (e) {
+    console.error('Lookup error:', e);
     const errorMsg = '⚠️ エラー<br><span style="font-size:0.9rem;opacity:0.8;">' + (e.message || String(e)) + '</span>';
     if (showInModal) {
       showModal(errorMsg);
@@ -771,10 +839,10 @@ async function startZXing() {
       async (result, err) => {
         if (result) {
           const text = (result.getText() || '').trim();
-          await lookupByUuid(text, true); // モーダル表示
+          await lookupByUuid(text, true);
           stopZXing();
         } else if (err && !(err instanceof ZXing.NotFoundException)) {
-          setCameraStatus('⚠️ 読み取りエラー');
+          setCameraStatus('⚠️ 読み取りエラー';
         }
       }
     );
@@ -798,9 +866,9 @@ function stopZXing() {
   els.cameraOverlay.classList.remove('active');
 }
 
-// --- イベントリスナー ---
-els.loginForm.addEventListener('submit', handleLogin); // ログインフォーム
-els.logoutBtn.addEventListener('click', handleLogout); // ログアウトボタン
+// イベントリスナー
+els.loginForm.addEventListener('submit', handleLogin);
+els.logoutBtn.addEventListener('click', handleLogout);
 
 els.start.addEventListener('click', startZXing);
 els.stop.addEventListener('click', stopZXing);
@@ -812,28 +880,25 @@ els.modalOverlay.addEventListener('click', (e) => {
 els.lookupBtn.addEventListener('click', () => {
   const id = (els.uuidInput.value || '').trim();
   if (!id) return;
-  lookupByUuid(id, true); // モーダル表示
+  lookupByUuid(id, true);
 });
 
-// --- 初期化処理 ---
+// 初期化処理
 function initializeApp() {
     const token = localStorage.getItem('scanner_auth_token');
+    
+    initializeSupabaseClient(token || null);
+    
     if (token) {
         console.log("既存のトークンが見つかりました。");
-        // ★ ここでトークンが有効か検証するのが理想 (例: getUser を試す)
-        // 今回は簡略化のため、トークンがあればログイン済みとみなす
-        initializeSupabaseClient(token);
         showScannerUI();
     } else {
         console.log("トークンが見つかりません。ログイン画面を表示します。");
-        initializeSupabaseClient(); // トークンなしで初期化
         showLoginUI();
     }
 }
 
-// アプリケーション初期化を実行
 initializeApp();
-
 </script>
 </body>
 </html>
