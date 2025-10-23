@@ -292,8 +292,8 @@ async function lookupByUuid(id, showInModal = false) {
     console.log('lookup_user呼び出し:', id);
     
     const { data, error } = await sb
-      .rpc('lookup_user', { p_id: id })
-      .single();
+  .rpc('lookup_user', { p_id: id })
+  .maybeSingle();  // ✅ 0件の時は data: null を返す
 
     console.log('RPC結果:', { data, error });
 
