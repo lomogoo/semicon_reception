@@ -655,22 +655,26 @@ button:hover::before {
 const SUPABASE_URL = "https://fsaeuowdijoeqhnrqazx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZzYWV1b3dkaWpvZXFobnJxYXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5MjA0MjYsImV4cCI6MjA3NTQ5NjQyNn0.xgIQ9jf3qa4oy6Dbc8mVaP8woRDWBwMxLAJwiCGEWmk";
 
+// 運営スタッフ共通アカウント（受付専用）
+const STAFF_EMAIL = "semi_reception@u-media.jp";
+const STAFF_PASSWORD = "handoutai_UMEDIA";
+
 let sb = null;
 
 function initializeSupabaseClient(jwt = null) {
     const options = {
-        auth: { 
-            persistSession: false,
-            autoRefreshToken: false
+        auth: {
+            persistSession: jwt ? true : false,
+            autoRefreshToken: jwt ? true : false
         }
     };
-    
+
     if (jwt) {
-        options.global = { 
-            headers: { 'Authorization': `Bearer ${jwt}` } 
+        options.global = {
+            headers: { 'Authorization': `Bearer ${jwt}` }
         };
     }
-    
+
     sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, options);
     console.log("Supabase client initialized", jwt ? "with JWT" : "without JWT");
 }
@@ -867,9 +871,43 @@ els.lookupBtn.addEventListener('click', () => {
   lookupByUuid(id, true);
 });
 
-function initializeApp() {
-    initializeSupabaseClient(null);
-    console.log("アプリを初期化しました。");
+async function initializeApp() {
+    console.log("アプリを初期化中...");
+    setResult('🔄 認証中...');
+
+    try {
+        // 一時的にSupabaseクライアントを初期化（ログイン用）
+        initializeSupabaseClient(null);
+
+        // 運営スタッフアカウントで自動ログイン
+        const { data, error } = await sb.auth.signInWithPassword({
+            email: STAFF_EMAIL,
+            password: STAFF_PASSWORD,
+        });
+
+        if (error) {
+            console.error("自動ログインエラー:", error);
+            setResult('⚠️ 認証エラー<br><span style="font-size:0.9rem;opacity:0.8;">管理者に連絡してください</span>');
+            return;
+        }
+
+        if (data.session && data.user) {
+            console.log("自動ログイン成功:", data.user.email);
+            const jwt = data.session.access_token;
+
+            // JWTトークンでSupabaseクライアントを再初期化
+            initializeSupabaseClient(jwt);
+
+            setResult('✅ 準備完了<br><span style="font-size:0.9rem;opacity:0.8;">QRコードをスキャンしてください</span>');
+            console.log("アプリの初期化が完了しました。");
+        } else {
+            throw new Error('セッション情報が取得できませんでした。');
+        }
+
+    } catch (error) {
+        console.error('初期化エラー:', error);
+        setResult('⚠️ 初期化エラー<br><span style="font-size:0.9rem;opacity:0.8;">' + (error.message || String(error)) + '</span>');
+    }
 }
 
 initializeApp();
