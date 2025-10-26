@@ -424,29 +424,30 @@ button:hover::before {
 }
 
 .modal-close-btn {
-  position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.06);
+  width: 100%;
+  max-width: 200px;
+  margin: 2rem auto 0;
+  padding: 1rem 2rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.95), rgba(0, 81, 213, 0.95));
   border: none;
-  color: #666;
-  font-size: 1.25rem;
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  line-height: 1;
-  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3);
 }
 
 .modal-close-btn:hover {
-  background: rgba(0, 0, 0, 0.12);
-  transform: rotate(90deg);
+  background: linear-gradient(135deg, rgba(0, 122, 255, 1), rgba(0, 81, 213, 1));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 122, 255, 0.4);
 }
 
 .modal-badge {
@@ -692,10 +693,7 @@ button:hover::before {
 <h1>半導体キャリアフェス 受付</h1>
 <div id="scanner-section">
 <div class="glass-card">
-<div class="button-group">
 <button id="start-scan">📷 カメラ起動</button>
-<button id="stop-scan" disabled>⏹ 停止</button>
-</div>
 </div>
 <div class="glass-card">
 <div class="input-group">
@@ -716,8 +714,8 @@ button:hover::before {
 </div>
 <div class="modal-overlay" id="modal-overlay">
 <div class="modal-content">
-<button class="modal-close-btn" id="modal-close">✕</button>
 <div id="modal-result"></div>
+<button class="modal-close-btn" id="modal-close">CLOSE</button>
 </div>
 </div>
 <script>
@@ -751,7 +749,6 @@ function initializeSupabaseClient(jwt = null) {
 const els = {
   scannerSection: document.getElementById('scanner-section'),
   start: document.getElementById('start-scan'),
-  stop: document.getElementById('stop-scan'),
   video: document.getElementById('video'),
   result: document.getElementById('result'),
   uuidInput: document.getElementById('uuid-input'),
@@ -807,8 +804,8 @@ function formatModalResult(data) {
   return `
     <div class="modal-badge modal-badge-pre">✅ 事前登録確認</div>
     <div class="modal-welcome-message">
-      事前申込ありがとうございます！<br>
-      <span style="font-size: 0.85em; opacity: 0.8;">事前登録特典をお受け取りください</span>
+      ありがとうございます！<br>
+      <span style="font-size: 0.85em; opacity: 0.8;">特典をお受け取りください🎁</span>
     </div>
     <div class="modal-user-meta">
       <div class="meta-row">
@@ -832,7 +829,7 @@ function formatResult(data) {
 
   return `
     <div class="result-badge">✅ 事前登録確認</div>
-    <div class="result-welcome">事前申込ありがとうございます</div>
+    <div class="result-welcome">ありがとうございます</div>
     <div class="result-uuid">UUID: ${data.id}</div>
     <div class="result-time">${timestamp}</div>
   `;
@@ -920,7 +917,6 @@ async function startZXing() {
     currentDeviceId = await pickBackCamera(devices);
 
     els.start.disabled = true;
-    els.stop.disabled = false;
 
     await codeReader.decodeFromVideoDevice(
       currentDeviceId,
@@ -949,7 +945,6 @@ async function startZXing() {
 function stopZXing() {
   try { if (codeReader) codeReader.reset(); } catch {}
   els.start.disabled = false;
-  els.stop.disabled = true;
   const stream = els.video.srcObject;
   if (stream && stream.getTracks) stream.getTracks().forEach(t => t.stop());
   els.video.srcObject = null;
@@ -958,7 +953,6 @@ function stopZXing() {
 }
 
 els.start.addEventListener('click', startZXing);
-els.stop.addEventListener('click', stopZXing);
 els.cameraStop.addEventListener('click', stopZXing);
 els.modalClose.addEventListener('click', hideModal);
 els.modalOverlay.addEventListener('click', (e) => {
