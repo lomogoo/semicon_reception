@@ -326,6 +326,31 @@ button:hover::before {
   transform: scale(1.1) rotate(90deg);
 }
 
+.camera-stop-btn {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  padding: 1rem 2rem;
+  border-radius: 16px;
+  background: rgba(255, 59, 48, 0.9);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 1001;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+}
+
+.camera-stop-btn:hover {
+  background: rgba(255, 59, 48, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(255, 59, 48, 0.5);
+}
+
 .camera-status {
   position: absolute;
   bottom: 3rem;
@@ -438,6 +463,16 @@ button:hover::before {
   margin-bottom: 2rem;
   letter-spacing: -1px;
   line-height: 1.1;
+}
+
+.modal-welcome-message {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 2rem;
+  letter-spacing: -0.5px;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .modal-user-info {
@@ -601,11 +636,29 @@ button:hover::before {
   letter-spacing: -0.5px;
 }
 
+.result-welcome {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 1rem;
+  letter-spacing: -0.5px;
+  text-align: center;
+}
+
 .result-email {
   font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.85);
   margin-bottom: 0.5rem;
   font-weight: 500;
+}
+
+.result-uuid {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'SF Mono', Monaco, monospace;
+  margin-bottom: 0.75rem;
+  word-break: break-all;
+  text-align: center;
 }
 
 .result-time {
@@ -641,7 +694,7 @@ button:hover::before {
 </div>
 </div>
 <div class="camera-overlay" id="camera-overlay">
-<button class="camera-close-btn" id="camera-close">✕</button>
+<button class="camera-stop-btn" id="camera-stop">⏹ 停止</button>
 <video id="video" autoplay playsinline muted></video>
 <div class="camera-status" id="camera-status">QRコードをカメラにかざしてください</div>
 </div>
@@ -688,12 +741,14 @@ const els = {
   uuidInput: document.getElementById('uuid-input'),
   lookupBtn: document.getElementById('lookup-btn'),
   cameraOverlay: document.getElementById('camera-overlay'),
-  cameraClose: document.getElementById('camera-close'),
+  cameraStop: document.getElementById('camera-stop'),
   cameraStatus: document.getElementById('camera-status'),
   modalOverlay: document.getElementById('modal-overlay'),
   modalResult: document.getElementById('modal-result'),
   modalClose: document.getElementById('modal-close')
 };
+
+let isCameraActive = false;
 
 function setResult(html) {
   els.result.innerHTML = html;
@@ -706,41 +761,64 @@ function setCameraStatus(text) {
 function showModal(html) {
   els.modalResult.innerHTML = html;
   els.modalOverlay.classList.add('active');
+
+  // モーダル表示時はカメラオーバーレイを隠す（カメラは停止しない）
+  if (isCameraActive) {
+    els.cameraOverlay.classList.remove('active');
+  }
 }
 
 function hideModal() {
   els.modalOverlay.classList.remove('active');
+
+  // カメラが起動中なら、カメラオーバーレイに戻る
+  if (isCameraActive) {
+    els.cameraOverlay.classList.add('active');
+    setCameraStatus('👀 QRコードをカメラにかざしてください');
+  }
 }
 
 function formatModalResult(data) {
+  const timestamp = new Date().toLocaleString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+
   return `
-    <div class="modal-badge modal-badge-pre">✅ 事前登録済み</div>
-    <div class="modal-user-name">${data.name || '-'}</div>
-    <div class="modal-user-info">
-      <div class="info-row">
-        <span class="info-label">メール</span>
-        <span class="info-value">${data.email || '-'}</span>
-      </div>
+    <div class="modal-badge modal-badge-pre">✅ 事前登録確認</div>
+    <div class="modal-welcome-message">
+      事前申込ありがとうございます！<br>
+      <span style="font-size: 0.85em; opacity: 0.8;">事前登録特典をお受け取りください</span>
     </div>
     <div class="modal-user-meta">
       <div class="meta-row">
-        <span class="meta-label">UUID</span>
-        <span class="meta-value">${data.id}</span>
+        <span class="meta-label">受付時刻</span>
+        <span class="meta-value">${timestamp}</span>
       </div>
       <div class="meta-row">
-        <span class="meta-label">登録日時</span>
-        <span class="meta-value">${new Date().toLocaleString('ja-JP')}</span>
+        <span class="meta-label">UUID</span>
+        <span class="meta-value">${data.id}</span>
       </div>
     </div>
   `;
 }
 
 function formatResult(data) {
+  const timestamp = new Date().toLocaleTimeString('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+
   return `
-    <div class="result-badge">✅ 事前登録済み</div>
-    <div class="result-name">${data.name || '-'}</div>
-    <div class="result-email">${data.email || '-'}</div>
-    <div class="result-time">${new Date().toLocaleTimeString('ja-JP')}</div>
+    <div class="result-badge">✅ 事前登録確認</div>
+    <div class="result-welcome">事前申込ありがとうございます</div>
+    <div class="result-uuid">UUID: ${data.id}</div>
+    <div class="result-time">${timestamp}</div>
   `;
 }
 
@@ -809,6 +887,8 @@ async function pickBackCamera(devices) {
 async function startZXing() {
   els.cameraOverlay.classList.add('active');
   setCameraStatus('📷 初期化中…');
+  isCameraActive = true;
+
   try {
     if (!window.ZXing || !window.ZXing.BrowserMultiFormatReader) {
       throw new Error('ZXing の読み込みに失敗しました');
@@ -818,6 +898,7 @@ async function startZXing() {
     const devices = await codeReader.listVideoInputDevices();
     if (!devices || devices.length === 0) {
       setCameraStatus('❌ カメラが見つかりません');
+      isCameraActive = false;
       return;
     }
     currentDeviceId = await pickBackCamera(devices);
@@ -832,7 +913,7 @@ async function startZXing() {
         if (result) {
           const text = (result.getText() || '').trim();
           await lookupByUuid(text, true);
-          stopZXing();
+          // カメラは停止せず、モーダルを閉じたら再度読み取り可能
         } else if (err && !(err instanceof ZXing.NotFoundException)) {
           setCameraStatus('⚠️ 読み取りエラー');
         }
@@ -845,6 +926,7 @@ async function startZXing() {
     setCameraStatus('👀 QRコードをカメラにかざしてください');
   } catch (e) {
     setCameraStatus('⚠️ 初期化失敗: ' + (e.message || String(e)));
+    isCameraActive = false;
   }
 }
 
@@ -856,11 +938,12 @@ function stopZXing() {
   if (stream && stream.getTracks) stream.getTracks().forEach(t => t.stop());
   els.video.srcObject = null;
   els.cameraOverlay.classList.remove('active');
+  isCameraActive = false;
 }
 
 els.start.addEventListener('click', startZXing);
 els.stop.addEventListener('click', stopZXing);
-els.cameraClose.addEventListener('click', stopZXing);
+els.cameraStop.addEventListener('click', stopZXing);
 els.modalClose.addEventListener('click', hideModal);
 els.modalOverlay.addEventListener('click', (e) => {
   if (e.target === els.modalOverlay) hideModal();
