@@ -39,12 +39,10 @@
 
 body {
   font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
-  background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
-  background-size: 400% 400%;
-  animation: gradient-shift 15s ease infinite;
+  background: #0a0a0a;
   min-height: 100vh;
   padding: 2rem 1.5rem;
-  color: #1a1a1a;
+  color: #ffffff;
   position: relative;
   overflow-x: hidden;
 }
@@ -52,13 +50,12 @@ body {
 body::before {
   content: '';
   position: fixed;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: float 20s ease-in-out infinite;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.03) 0%, transparent 50%),
+              radial-gradient(circle at 80% 70%, rgba(255,255,255,0.02) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
@@ -73,16 +70,13 @@ body::before {
 h1 {
   font-size: 2.25rem;
   font-weight: 900;
-  background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #ffffff;
   text-align: center;
   margin-bottom: 3rem;
   letter-spacing: -1px;
-  text-shadow: 0 4px 12px rgba(0,0,0,0.1);
   position: relative;
   line-height: 1.2;
+  text-transform: uppercase;
 }
 
 h1::after {
@@ -91,28 +85,24 @@ h1::after {
   bottom: -16px;
   left: 50%;
   transform: translateX(-50%);
-  width: 80px;
-  height: 4px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
-  border-radius: 3px;
-  box-shadow: 0 2px 8px rgba(255,255,255,0.3);
+  width: 60px;
+  height: 3px;
+  background: #ffffff;
+  border-radius: 2px;
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(60px) saturate(200%);
-  -webkit-backdrop-filter: blur(60px) saturate(200%);
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow:
-    0 8px 32px 0 rgba(31, 38, 135, 0.15),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.3),
-    0 1px 0 0 rgba(0, 0, 0, 0.05);
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   padding: 2rem;
   margin-bottom: 1.5rem;
   position: relative;
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
 }
 
 .glass-card::before {
@@ -125,7 +115,7 @@ h1::after {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.03),
     transparent
   );
   transition: left 0.6s;
@@ -136,27 +126,13 @@ h1::after {
 }
 
 .glass-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
+  display: none;
 }
 
 .glass-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow:
-    0 12px 48px 0 rgba(31, 38, 135, 0.25),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.4),
-    0 1px 0 0 rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .glass-card h2 {
@@ -170,35 +146,21 @@ h1::after {
 button {
   padding: 1.2rem 2rem;
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 600;
   border: none;
-  border-radius: 18px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   font-family: inherit;
   width: 100%;
   position: relative;
   overflow: hidden;
-  letter-spacing: 0.3px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 button::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-button:hover::before {
-  width: 300px;
-  height: 300px;
+  display: none;
 }
 
 .button-group {
@@ -249,29 +211,29 @@ button:hover::before {
 }
 
 #start-scan {
-  background: linear-gradient(135deg, rgba(52, 199, 89, 0.95), rgba(48, 209, 88, 0.95));
-  color: white;
-  box-shadow: 0 4px 16px rgba(52, 199, 89, 0.3);
+  background: #ffffff;
+  color: #000000;
+  box-shadow: none;
 }
 
 #start-scan:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(52, 199, 89, 0.4);
+  background: #f0f0f0;
+  transform: none;
 }
 
 #stop-scan {
-  background: linear-gradient(135deg, rgba(255, 59, 48, 0.95), rgba(255, 45, 85, 0.95));
-  color: white;
-  box-shadow: 0 4px 16px rgba(255, 59, 48, 0.3);
+  background: #ffffff;
+  color: #000000;
+  box-shadow: none;
 }
 
 #stop-scan:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(255, 59, 48, 0.4);
+  background: #f0f0f0;
+  transform: none;
 }
 
 #start-scan:disabled, #stop-scan:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
   transform: none;
 }
@@ -334,31 +296,32 @@ button:hover::before {
 
 .camera-stop-btn {
   position: absolute;
-  top: 2rem;
-  right: 2rem;
-  padding: 1rem 2rem;
-  border-radius: 16px;
-  background: rgba(255, 59, 48, 0.9);
-  backdrop-filter: blur(20px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  top: 1rem;
+  right: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 500;
   cursor: pointer;
-  z-index: 1001;
-  transition: all 0.3s ease;
+  z-index: 1002;
+  transition: all 0.2s ease;
   font-family: inherit;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
+  opacity: 0.6;
+  text-transform: uppercase;
 }
 
 .camera-stop-btn:hover {
-  background: rgba(255, 59, 48, 1);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(255, 59, 48, 0.5);
+  background: rgba(255, 255, 255, 0.3);
+  opacity: 1;
 }
 
 .camera-status {
@@ -366,15 +329,102 @@ button:hover::before {
   bottom: 3rem;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(20px);
-  padding: 1.2rem 2.5rem;
-  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  padding: 1rem 2rem;
+  border-radius: 4px;
   color: white;
   z-index: 1001;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   font-weight: 500;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
+  font-size: 0.9rem;
+}
+
+.qr-guide-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: 280px;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  z-index: 1001;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+
+.qr-guide-frame::before,
+.qr-guide-frame::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #ffffff;
+}
+
+.qr-guide-frame::before {
+  top: -3px;
+  left: -3px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.qr-guide-frame::after {
+  top: -3px;
+  right: -3px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.qr-guide-corner-bl,
+.qr-guide-corner-br {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #ffffff;
+}
+
+.qr-guide-corner-bl {
+  bottom: -3px;
+  left: -3px;
+  border-right: none;
+  border-top: none;
+}
+
+.qr-guide-corner-br {
+  bottom: -3px;
+  right: -3px;
+  border-left: none;
+  border-top: none;
+}
+
+.camera-switch-btn {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.75rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1002;
+  transition: all 0.2s ease;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.camera-switch-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
 }
 
 .modal-overlay {
@@ -398,17 +448,14 @@ button:hover::before {
 }
 
 .modal-content {
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(40px);
-  border-radius: 32px;
+  background: #ffffff;
+  border-radius: 8px;
   padding: 3rem;
   max-width: 560px;
   width: 100%;
-  box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -428,49 +475,47 @@ button:hover::before {
   max-width: 200px;
   margin: 2rem auto 0;
   padding: 1rem 2rem;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(0, 122, 255, 0.95), rgba(0, 81, 213, 0.95));
+  border-radius: 4px;
+  background: #000000;
   border: none;
-  color: white;
-  font-size: 1rem;
-  font-weight: 700;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   letter-spacing: 1px;
   text-transform: uppercase;
-  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3);
 }
 
 .modal-close-btn:hover {
-  background: linear-gradient(135deg, rgba(0, 122, 255, 1), rgba(0, 81, 213, 1));
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(0, 122, 255, 0.4);
+  background: #333333;
 }
 
 .modal-badge {
   display: inline-block;
-  padding: 0.85rem 1.75rem;
-  border-radius: 18px;
-  font-size: 1rem;
-  font-weight: 800;
+  padding: 0.5rem 1.25rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
   margin-bottom: 2rem;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  box-shadow: 0 6px 16px rgba(52, 199, 89, 0.25);
+  letter-spacing: 1px;
+  box-shadow: none;
 }
 
 .modal-badge-pre {
-  background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: #000000;
+  color: #ffffff;
+  border: none;
 }
 
 .modal-badge-onsite {
-  background: linear-gradient(135deg, #007aff 0%, #0051d5 100%);
-  color: white;
+  background: #000000;
+  color: #ffffff;
+  border: none;
 }
 
 .modal-user-name {
@@ -567,82 +612,33 @@ button:hover::before {
 }
 
 #result {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 4px;
   padding: 2rem;
   font-size: 1rem;
   color: rgba(255, 255, 255, 0.95);
   min-height: 180px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   line-height: 1.6;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.input-group {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 1rem;
-  align-items: stretch;
-}
-
-@media (max-width: 480px) {
-  .input-group {
-    grid-template-columns: 1fr;
-  }
-}
-
-#uuid-input {
-  padding: 1.2rem 1.5rem;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  color: white;
-  font-family: 'SF Mono', Monaco, monospace;
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
-  font-weight: 500;
-}
-
-#uuid-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-#uuid-input:focus {
-  outline: none;
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-}
-
-#lookup-btn {
-  background: linear-gradient(135deg, rgba(0, 122, 255, 0.95), rgba(0, 81, 213, 0.95));
-  color: white;
-  padding: 1.2rem 2rem;
-  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3);
-  white-space: nowrap;
-}
-
-#lookup-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(0, 122, 255, 0.4);
-}
 
 .result-badge {
   display: inline-block;
-  background: rgba(52, 199, 89, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   color: rgba(255, 255, 255, 0.95);
-  padding: 0.6rem 1.25rem;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 0.95rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.8rem;
   margin-bottom: 1rem;
-  letter-spacing: 0.3px;
-  border: 1px solid rgba(52, 199, 89, 0.3);
+  letter-spacing: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
 }
 
 .result-name {
@@ -695,12 +691,6 @@ button:hover::before {
 <div class="glass-card">
 <button id="start-scan">📷 カメラ起動</button>
 </div>
-<div class="glass-card">
-<div class="input-group">
-<input id="uuid-input" placeholder="UUID手入力（テスト用）">
-<button id="lookup-btn">検索</button>
-</div>
-</div>
 <div class="glass-card result-section">
 <h2>最近のスキャン</h2>
 <div id="result">QRコードをスキャンしてください</div>
@@ -708,8 +698,13 @@ button:hover::before {
 </div>
 </div>
 <div class="camera-overlay" id="camera-overlay">
-<button class="camera-stop-btn" id="camera-stop">⏹ 停止</button>
+<button class="camera-switch-btn" id="camera-switch">🔄</button>
+<button class="camera-stop-btn" id="camera-stop">STOP</button>
 <video id="video" autoplay playsinline muted></video>
+<div class="qr-guide-frame">
+<span class="qr-guide-corner-bl"></span>
+<span class="qr-guide-corner-br"></span>
+</div>
 <div class="camera-status" id="camera-status">QRコードをカメラにかざしてください</div>
 </div>
 <div class="modal-overlay" id="modal-overlay">
@@ -751,10 +746,9 @@ const els = {
   start: document.getElementById('start-scan'),
   video: document.getElementById('video'),
   result: document.getElementById('result'),
-  uuidInput: document.getElementById('uuid-input'),
-  lookupBtn: document.getElementById('lookup-btn'),
   cameraOverlay: document.getElementById('camera-overlay'),
   cameraStop: document.getElementById('camera-stop'),
+  cameraSwitch: document.getElementById('camera-switch'),
   cameraStatus: document.getElementById('camera-status'),
   modalOverlay: document.getElementById('modal-overlay'),
   modalResult: document.getElementById('modal-result'),
@@ -888,12 +882,26 @@ async function lookupByUuid(id, showInModal = false) {
 
 let codeReader = null;
 let currentDeviceId = null;
+let availableDevices = [];
+let useFrontCamera = true; // デフォルトをフロントカメラに
 
-async function pickBackCamera(devices) {
-  const byLabel = devices.find(d =>
+async function pickCamera(devices, useFront = true) {
+  // フロントカメラを優先
+  if (useFront) {
+    const frontCamera = devices.find(d =>
+      /front|user|face|前面|フロント/i.test(d.label || '')
+    );
+    if (frontCamera) return frontCamera.deviceId;
+    // フロントカメラが見つからない場合、最初のデバイスを返す
+    return devices.length ? devices[0].deviceId : null;
+  }
+
+  // バックカメラを選択
+  const backCamera = devices.find(d =>
     /back|rear|environment|後面|背面/i.test(d.label || '')
   );
-  if (byLabel) return byLabel.deviceId;
+  if (backCamera) return backCamera.deviceId;
+  // バックカメラが見つからない場合、最後のデバイスを返す
   return devices.length ? devices[devices.length - 1].deviceId : null;
 }
 
@@ -908,13 +916,13 @@ async function startZXing() {
     }
 
     if (!codeReader) codeReader = new ZXing.BrowserMultiFormatReader();
-    const devices = await codeReader.listVideoInputDevices();
-    if (!devices || devices.length === 0) {
+    availableDevices = await codeReader.listVideoInputDevices();
+    if (!availableDevices || availableDevices.length === 0) {
       setCameraStatus('❌ カメラが見つかりません');
       isCameraActive = false;
       return;
     }
-    currentDeviceId = await pickBackCamera(devices);
+    currentDeviceId = await pickCamera(availableDevices, useFrontCamera);
 
     els.start.disabled = true;
 
@@ -952,16 +960,54 @@ function stopZXing() {
   isCameraActive = false;
 }
 
+async function switchCamera() {
+  if (!isCameraActive || !availableDevices || availableDevices.length < 2) {
+    return;
+  }
+
+  setCameraStatus('📷 カメラ切り替え中…');
+
+  // カメラを切り替え
+  useFrontCamera = !useFrontCamera;
+
+  try {
+    // 現在のカメラを停止
+    if (codeReader) codeReader.reset();
+    const stream = els.video.srcObject;
+    if (stream && stream.getTracks) stream.getTracks().forEach(t => t.stop());
+
+    // 新しいカメラを選択
+    currentDeviceId = await pickCamera(availableDevices, useFrontCamera);
+
+    // 新しいカメラで再起動
+    await codeReader.decodeFromVideoDevice(
+      currentDeviceId,
+      els.video,
+      async (result, err) => {
+        if (result) {
+          const text = (result.getText() || '').trim();
+          await lookupByUuid(text, true);
+        } else if (err && !(err instanceof ZXing.NotFoundException)) {
+          setCameraStatus('⚠️ 読み取りエラー');
+        }
+      }
+    );
+
+    els.video.setAttribute('playsinline', 'true');
+    els.video.muted = true;
+
+    setCameraStatus('👀 QRコードをカメラにかざしてください');
+  } catch (e) {
+    setCameraStatus('⚠️ カメラ切り替え失敗: ' + (e.message || String(e)));
+  }
+}
+
 els.start.addEventListener('click', startZXing);
 els.cameraStop.addEventListener('click', stopZXing);
+els.cameraSwitch.addEventListener('click', switchCamera);
 els.modalClose.addEventListener('click', hideModal);
 els.modalOverlay.addEventListener('click', (e) => {
   if (e.target === els.modalOverlay) hideModal();
-});
-els.lookupBtn.addEventListener('click', () => {
-  const id = (els.uuidInput.value || '').trim();
-  if (!id) return;
-  lookupByUuid(id, true);
 });
 
 async function initializeApp() {
