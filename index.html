@@ -693,6 +693,11 @@ button::before {
 <div class="glass-card">
 <button id="start-scan">📷 カメラ起動</button>
 </div>
+<div class="glass-card">
+<h2>本日のスキャン数</h2>
+<div id="scan-counter" style="text-align: center; font-size: 3rem; font-weight: 900; color: #ffffff; padding: 1.5rem 0; letter-spacing: -1px;">0</div>
+<button id="reset-counter" style="background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.7); font-size: 0.85rem; padding: 0.75rem 1.5rem; margin-top: 0.5rem;">カウントをリセット</button>
+</div>
 <div class="glass-card result-section">
 <h2>最近のスキャン</h2>
 <div id="result">QRコードをスキャンしてください</div>
@@ -754,8 +759,36 @@ const els = {
   cameraStatus: document.getElementById('camera-status'),
   modalOverlay: document.getElementById('modal-overlay'),
   modalResult: document.getElementById('modal-result'),
-  modalClose: document.getElementById('modal-close')
+  modalClose: document.getElementById('modal-close'),
+  scanCounter: document.getElementById('scan-counter'),
+  resetCounter: document.getElementById('reset-counter')
 };
+
+// カウンター管理関数
+const COUNTER_KEY = 'qr_scan_count';
+
+function getScanCount() {
+  const count = localStorage.getItem(COUNTER_KEY);
+  return count ? parseInt(count, 10) : 0;
+}
+
+function incrementScanCount() {
+  const currentCount = getScanCount();
+  const newCount = currentCount + 1;
+  localStorage.setItem(COUNTER_KEY, newCount.toString());
+  updateCounterDisplay();
+  return newCount;
+}
+
+function resetScanCount() {
+  localStorage.setItem(COUNTER_KEY, '0');
+  updateCounterDisplay();
+}
+
+function updateCounterDisplay() {
+  const count = getScanCount();
+  els.scanCounter.textContent = count.toString();
+}
 
 let isCameraActive = false;
 
@@ -864,6 +897,9 @@ async function lookupByUuid(id, showInModal = false) {
       }
       return;
     }
+
+    // 成功したスキャンをカウント
+    incrementScanCount();
 
     if (showInModal) {
       showModal(formatModalResult(data));
@@ -1010,10 +1046,18 @@ els.modalClose.addEventListener('click', hideModal);
 els.modalOverlay.addEventListener('click', (e) => {
   if (e.target === els.modalOverlay) hideModal();
 });
+els.resetCounter.addEventListener('click', () => {
+  if (confirm('スキャンカウントをリセットしますか？')) {
+    resetScanCount();
+  }
+});
 
 async function initializeApp() {
     console.log("アプリを初期化中...");
     setResult('🔄 認証中...');
+
+    // カウンター表示を初期化
+    updateCounterDisplay();
 
     try {
         // 一時的にSupabaseクライアントを初期化（ログイン用）
